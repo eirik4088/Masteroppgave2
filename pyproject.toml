@@ -10,4 +10,7 @@ dependencies = [
     "pandas",
     "matplotlib",
     "numpy",
+    "scipy",
+    "scikit-learn",
+    "pycrostates",
 ]
