@@ -71,12 +71,12 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         _description_
     """
     normalized = unit_normalize(data)
-    #plot_31_points_2d(normalized, block=False)
-    plot_31_points_3d(normalized)
+    plot_31_points_2d(normalized, block=False)
+    #plot_31_points_3d(normalized)
 
     shift_positive = np.abs(normalized)
-    #plot_31_points_2d(shift_positive, block=False)
-    plot_31_points_3d(shift_positive)
+    plot_31_points_2d(shift_positive, block=False)
+    #plot_31_points_3d(shift_positive)
 
     """linearize = 0
 
@@ -115,9 +115,9 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         transformed[:, dim+1] = np.sqrt((-np.square(centralize)+0.25))*pull_direction
 
     #print(transformed)
-    #plot_31_points_2d(transformed, block=True)
-    plot_31_points_3d(transformed)
-    plot_31_points_1d(np.arange(0, 31), block=True)
+    plot_31_points_2d(transformed, block=True)
+    #plot_31_points_3d(transformed)
+    #plot_31_points_1d(np.arange(0, 31), block=True)
     """dim_reduced = shift_positive[:-2, :]
     plot_31_points_1d(dim_reduced)
 
@@ -162,7 +162,7 @@ def asses_metric_order(distance_func, data: np.ndarray):
 # Number of points to generate
 num_points = 31
 
-"""# Generate evenly spaced angles to cover the unit circle
+# Generate evenly spaced angles to cover the unit circle
 angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
 
 # Convert angles to 2D vectors
@@ -174,8 +174,8 @@ print(asses_metric_order(cdist, data_2d))
 
 data = feature_transform(data_2d)
             #np.hstack((np.abs(data_all), (((data_all[:, 0] * data_all[:, 1])/np.abs((data_all[:, 0] * data_all[:, 1])))*np.sqrt(data_all[:, 0] + data_all[:, 1] - 1)).reshape((len(data_all), 1))))
-"""
-def fibonacci_sphere(samples=100):
+
+"""def fibonacci_sphere(samples=100):
 
     points = np.ndarray(shape=(31, 3))
     phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
@@ -201,4 +201,4 @@ data_3d = fibonacci_sphere(31)
 
 #print(data_3d)
 #plot_31_points_3d(data_3d)
-print(asses_metric_order(cdist, data_3d))
+print(asses_metric_order(cdist, data_3d))"""
