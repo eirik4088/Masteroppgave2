@@ -74,6 +74,14 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     plot_31_points_2d(normalized, block=False)
     #plot_31_points_3d(normalized)
 
+    ###############
+    #Testing different lengt circkles for the higher dim version.
+    normalized=normalized*0.25
+    plot_31_points_2d(normalized, block=False)
+    #As I suspected it does not work, how should I tune the exponent for projecting to one dim?
+    #Seems I dont have to change the exponent, but multiply the entiere number with 1/r.
+    ###############
+
     shift_positive = np.abs(normalized)
     plot_31_points_2d(shift_positive, block=False)
     #plot_31_points_3d(shift_positive)
@@ -101,18 +109,18 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         linearize = np.ndarray(x_vals.shape)
         for e in range(linearize.shape[0]):
             if x_vals[e] >= y_vals[e]:
-                linearize[e] = np.square(x_vals[e])
+                linearize[e] = np.square(x_vals[e])*(1/0.25)
             else:
-                linearize[e] = 1 - np.square(y_vals[e]) 
+                linearize[e] = 0.25 - np.square(y_vals[e])*(1/0.25)
         plot_31_points_1d(linearize, block=False)
 
-        centralize = linearize - 0.5
+        centralize = linearize - 0.125
         plot_31_points_1d(centralize, block=False)
 
         if dim == 0:
             transformed[:, dim] = centralize
 
-        transformed[:, dim+1] = np.sqrt((-np.square(centralize)+0.25))*pull_direction
+        transformed[:, dim+1] = np.sqrt((-np.square(centralize)+0.015625))*pull_direction
 
     #print(transformed)
     plot_31_points_2d(transformed, block=True)
@@ -172,7 +180,7 @@ data_2d = np.array([(np.cos(theta), np.sin(theta)) for theta in angles])
 print(asses_metric_order(cdist, data_2d))
 
 
-data = feature_transform(data_2d)
+#data = feature_transform(data_2d)
             #np.hstack((np.abs(data_all), (((data_all[:, 0] * data_all[:, 1])/np.abs((data_all[:, 0] * data_all[:, 1])))*np.sqrt(data_all[:, 0] + data_all[:, 1] - 1)).reshape((len(data_all), 1))))
 
 """def fibonacci_sphere(samples=100):
