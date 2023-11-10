@@ -88,32 +88,27 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
     transformed = np.ndarray(shape=data.shape)
 
-    OG_radius_vals = np.ndarray(shape=(data.shape[0], data.shape[1]-1))
-
-    reduced = shift_positive
-
     for dim in range(transformed.shape[1]-1):
-        more_reduced = np.ndarray(shape=(reduced.shape[0], reduced.shape[1]-1))
-        for it in range(transformed.shape[1]-1-dim):
-            
-            radius_vals = np.linalg.norm(shift_positive[:, [0, dim+1]], axis=1)
+        linearize = np.ndarray(transformed.shape[0])
+        radius_vals = np.ndarray(linearize.shape)
 
-            x_vals = shift_positive[:, 0]
-            y_vals = shift_positive[:, dim+1]
+        for e in range(linearize.shape[0]):
+            obs = shift_positive[e, :]
+            max_dim = np.argmax(obs)
+            if max_dim == 0:
+                linearize[e] = np.square(obs[0])
+                radius_vals[e] =  1
+            else:
+                radius = np.linalg.norm(obs[0:max_dim+1])
+                radius_vals[e] = radius
+                linearize[e] = radius - np.square(obs[max_dim])
 
-            for e in range(x_vals.shape[0]):
-                if x_vals[e] >= y_vals[e]:
-                    more_reduced[e, it] = np.square(x_vals[e])*(1/radius_vals[e])
-                else:
-                    more_reduced[e, it] = radius_vals[e] - (np.square(y_vals[e])*(1/radius_vals[e]))
+        radius_vals = radius_vals/2
+        centralize = linearize - radius_vals
+        plot_31_points_1d(centralize, block=False)
 
-            more_reduced[:, it] -= (radius_vals/2)
+        transformed[:, 0] = centralize
 
-        reduced = more_reduced
-        if dim == 0:
-            plot_31_points_2d(reduced, block=False)
-
-    transformed[:, 0] = more_reduced.ravel()
 
     for dim in range(transformed.shape[1]-1):
         pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
@@ -121,12 +116,17 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         radius_vals = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
 
+        radius_vals = np.square(radius_vals/2)
+
         sum_squared_old_dims = np.zeros(shape=(radius_vals.shape))
 
         #print(radius_vals)
 
         for cumulative in range(dim+1):
             sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, cumulative])
+            if dim == 1:
+                print(sum_squared_old_dims[15]+radius_vals[15])
+                print(pull_direction[15])
         #print(sum_squared_old_dims)
 
         transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_vals))*pull_direction
@@ -135,21 +135,8 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     #plot_31_points_2d(transformed, block=True)
     plot_31_points_3d(transformed)
     #plot_31_points_1d(np.arange(0, 31), block=True)
-    """dim_reduced = shift_positive[:-2, :]
-    plot_31_points_1d(dim_reduced)
 
-    pull_direction = (data * data)/np.abs(data * data)
-    print(pull_direction)"""
-
-
-    """
-    new_dim_values = np.ndarray(shape=(data.shape[0], data.shape[1]-1))
-    for dim in range(data.shape[1]-1):
-        new_dim_values[: , dim] = ((data[:, dim] * data[:, dim+1])/np.abs((data[:, dim] * data[:, dim+1])))*(original_dim_values[:, dim]**1.2)*(original_dim_values[:, dim+1]**1.3)
-    np.nan_to_num(new_dim_values, copy=False)
-    transformed = np.hstack((original_dim_values, new_dim_values))
-    print(transformed)"""
-    #print(transformed)
+    print(transformed)
     plot_31_points_2d(transformed[:, 0:2], block=True)
     return transformed
 
@@ -169,8 +156,8 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     for obsv in range(len(data)):
         #if make_order_vector(absolute_cosine_distance[:, obsv]) != make_order_vector(test_distance[:, obsv]):
-        print(make_order_vector(absolute_cosine_distance[:, obsv]))
-        print(make_order_vector(test_distance[:, obsv]))
+        #print(make_order_vector(absolute_cosine_distance[:, obsv]))
+        #print(make_order_vector(test_distance[:, obsv]))
         if not all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, obsv]) - make_order_vector(test_distance[:, obsv]))):
             consistent_metric_order = False
 
