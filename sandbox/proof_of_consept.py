@@ -88,73 +88,38 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
     transformed = np.ndarray(shape=data.shape)
 
-    """
-    ##########################
-    # New
-    ##########################
+    OG_radius_vals = np.ndarray(shape=(data.shape[0], data.shape[1]-1))
 
-    reduced_dim = reduce_dim(shift_positive)
-    print(reduced_dim)
-    plot_31_points_1d(reduced_dim, block=False)
+    reduced = shift_positive
 
-    centralized = reduced_dim - 0.5
-    plot_31_points_1d(centralized, block=True)
+    for dim in range(transformed.shape[1]-1):
+        more_reduced = np.ndarray(shape=(reduced.shape[0], reduced.shape[1]-1))
+        for it in range(transformed.shape[1]-1-dim):
+            
+            radius_vals = np.linalg.norm(shift_positive[:, [0, dim+1]], axis=1)
 
-    transformed[0, :] = centralized
+            x_vals = shift_positive[:, 0]
+            y_vals = shift_positive[:, dim+1]
 
-    for dim in range(data.shape[1]):
+            for e in range(x_vals.shape[0]):
+                if x_vals[e] >= y_vals[e]:
+                    more_reduced[e, it] = np.square(x_vals[e])*(1/radius_vals[e])
+                else:
+                    more_reduced[e, it] = radius_vals[e] - (np.square(y_vals[e])*(1/radius_vals[e]))
 
-        pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
-        np.nan_to_num(pull_direction, copy=False)
-        sum_squared_old_dims = 0
+            more_reduced[:, it] -= (radius_vals/2)
 
-        for cumulative in range(dim):
-            sum_squared_old_dims += - np.square(transformed[cumulative, :])
-        
-        transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+0.25))*pull_direction
+        reduced = more_reduced
+        if dim == 0:
+            plot_31_points_2d(reduced, block=False)
 
-        if dim == 1:
-            plot_31_points_2d(transformed[:, 0:1], block=False)
-    
-    plot_31_points_3d(transformed)
-    plot_31_points_1d(np.arange(0, 31), block=True)
+    transformed[:, 0] = more_reduced.ravel()
 
-    return transformed
-    ##########################
-
-    exit()
-    """
     for dim in range(transformed.shape[1]-1):
         pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
         np.nan_to_num(pull_direction, copy=False)
 
-        """linearized_x = ((shift_positive[:, dim]-shift_positive[:, dim+1]+1)/2).reshape((len(shift_positive), 1))
-        linearize = np.hstack((linearized_x, -linearized_x+1))
-        plot_31_points_2d(linearize, block=False)
-
-        reduced_dim = linearized_x[:, 0]
-        plot_31_points_1d(reduced_dim, block=False)"""
-        radius_vals = np.linalg.norm(shift_positive[:, dim:dim+2], axis=1)
-        if dim == 1:
-            radius_vals = np.ones(31)
-
-        x_vals = shift_positive[:, dim]
-        y_vals = shift_positive[:, dim+1]
-        linearize = np.ndarray(x_vals.shape)
-        for e in range(linearize.shape[0]):
-            if x_vals[e] >= y_vals[e]:
-                linearize[e] = np.square(x_vals[e])*(1/radius_vals[e])
-            else:
-                linearize[e] = radius_vals[e] - (np.square(y_vals[e])*(1/radius_vals[e]))
-        plot_31_points_1d(linearize, block=False)
-
-        centralize = linearize - (radius_vals/2)
-        plot_31_points_1d(centralize, block=False)
-
-        radius_vals = np.square(radius_vals/2)
-
-        if dim == 0:
-            transformed[:, dim] = centralize
+        radius_vals = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
 
         sum_squared_old_dims = np.zeros(shape=(radius_vals.shape))
 
@@ -162,9 +127,6 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         for cumulative in range(dim+1):
             sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, cumulative])
-            if dim == 1:
-                print(sum_squared_old_dims[15]+radius_vals[15])
-                print(pull_direction[15])
         #print(sum_squared_old_dims)
 
         transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_vals))*pull_direction
