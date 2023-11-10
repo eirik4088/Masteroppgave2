@@ -55,19 +55,9 @@ def unit_normalize(data: np.ndarray) -> np.ndarray:
     normalized = data / norms
     return normalized
 
-def reduce_dim(data: np.ndarray):
-    one_dim = np.ndarray(shape=(data.shape[0]))
-
-    for o in range(data.shape[0]):
-        print(data[o, :])
-        one_dim[o] = np.square(np.max(data[o, :]))
-    
-    return one_dim
-
-
 
 def feature_transform(data: np.ndarray) -> np.ndarray:
-    print(data)
+    #print(data)
     """_summary_
 
     _extended_summary_ shape = (n_samples, n_features)
@@ -82,6 +72,12 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     np.ndarray
         _description_
     """
+
+    ###########################
+    #Handling the zero cases later...
+
+    ###########################
+
     normalized = unit_normalize(data)
     #plot_31_points_2d(normalized, block=False)
     plot_31_points_3d(normalized)
@@ -139,18 +135,20 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         reduced_dim = linearized_x[:, 0]
         plot_31_points_1d(reduced_dim, block=False)"""
         radius_vals = np.linalg.norm(shift_positive[:, dim:dim+2], axis=1)
+        if dim == 1:
+            radius_vals = np.ones(31)
 
         x_vals = shift_positive[:, dim]
         y_vals = shift_positive[:, dim+1]
         linearize = np.ndarray(x_vals.shape)
         for e in range(linearize.shape[0]):
             if x_vals[e] >= y_vals[e]:
-                linearize[e] = x_vals[e]**(radius_vals[e]*2)
+                linearize[e] = np.square(x_vals[e])*(1/radius_vals[e])
             else:
-                linearize[e] = radius_vals[e] - y_vals[e]**(radius_vals[e]*2)
+                linearize[e] = radius_vals[e] - (np.square(y_vals[e])*(1/radius_vals[e]))
         plot_31_points_1d(linearize, block=False)
 
-        centralize = linearize - 0.5
+        centralize = linearize - (radius_vals/2)
         plot_31_points_1d(centralize, block=False)
 
         radius_vals = np.square(radius_vals/2)
@@ -159,20 +157,22 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
             transformed[:, dim] = centralize
 
         sum_squared_old_dims = np.zeros(shape=(radius_vals.shape))
-        print(sum_squared_old_dims)
-        print(radius_vals)
-        print(np.square(transformed[:, 1]))
+
+        #print(radius_vals)
 
         for cumulative in range(dim+1):
             sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, cumulative])
-        print(sum_squared_old_dims)
+            if dim == 1:
+                print(sum_squared_old_dims[15]+radius_vals[15])
+                print(pull_direction[15])
+        #print(sum_squared_old_dims)
 
         transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_vals))*pull_direction
 
     #print(transformed)
     #plot_31_points_2d(transformed, block=True)
     plot_31_points_3d(transformed)
-    plot_31_points_1d(np.arange(0, 31), block=True)
+    #plot_31_points_1d(np.arange(0, 31), block=True)
     """dim_reduced = shift_positive[:-2, :]
     plot_31_points_1d(dim_reduced)
 
@@ -187,7 +187,8 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     np.nan_to_num(new_dim_values, copy=False)
     transformed = np.hstack((original_dim_values, new_dim_values))
     print(transformed)"""
-    print(transformed)
+    #print(transformed)
+    plot_31_points_2d(transformed[:, 0:2], block=True)
     return transformed
 
 def make_order_vector(vector: np.array) -> np.array:
@@ -206,8 +207,8 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     for obsv in range(len(data)):
         #if make_order_vector(absolute_cosine_distance[:, obsv]) != make_order_vector(test_distance[:, obsv]):
-        #print(make_order_vector(absolute_cosine_distance[:, obsv]))
-        #print(make_order_vector(test_distance[:, obsv]))
+        print(make_order_vector(absolute_cosine_distance[:, obsv]))
+        print(make_order_vector(test_distance[:, obsv]))
         if not all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, obsv]) - make_order_vector(test_distance[:, obsv]))):
             consistent_metric_order = False
 
@@ -254,6 +255,9 @@ def fibonacci_sphere(samples=100):
 
 # Convert the list of points to a NumPy array
 data_3d = fibonacci_sphere(31)
+
+data_3d = np.where(data_3d==0, 0.00001, data_3d)
+
 
 
 #print(data_3d)
