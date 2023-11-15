@@ -11,21 +11,21 @@ def plot_31_points_1d(data, block):
     plt.figure()
     plt.plot(data[:10], np.zeros((10)),label="Cluster 1", c="r", marker="o")
     plt.scatter(data[10:20], np.zeros((10)), label="Cluster 1", c="g", marker="o")
-    plt.scatter(data[20:31], np.zeros((11)), label="Cluster 1", c="b", marker="o")
+    plt.scatter(data[20:26], np.zeros((6)), label="Cluster 1", c="b", marker="o")
     plt.show(block=block)
 
 def plot_31_points_2d(data, block):
     plt.figure()
     plt.scatter(data[:10, 0], data[:10, 1], label="Cluster 1", c="r", marker="o")
     plt.scatter(data[10:20, 0], data[10:20, 1], label="Cluster 1", c="g", marker="o")
-    plt.scatter(data[20:31, 0], data[20:31, 1], label="Cluster 1", c="b", marker="o")
+    plt.scatter(data[20:26, 0], data[20:26, 1], label="Cluster 1", c="b", marker="o")
     plt.show(block=block)
 
 def plot_31_points_3d(data):
     fig = px.graph_objects.Figure()
-    fig.add_scatter3d(x=data[:10, 0], y=data[:10, 1], z=data[:10, 2], mode='markers')
-    fig.add_scatter3d(x=data[10:20, 0], y=data[10:20, 1], z=data[10:20, 2], mode='markers')
-    fig.add_scatter3d(x=data[20:31, 0], y=data[20:31, 1], z=data[20:31, 2], mode='markers')
+    fig.add_scatter3d(x=data[:10, 0], y=data[:10, 1], z=data[:10, 2], mode='markers', hovertext=np.char.mod('%d', np.arange(0,10)))
+    fig.add_scatter3d(x=data[10:20, 0], y=data[10:20, 1], z=data[10:20, 2], mode='markers', hovertext=np.char.mod('%d', np.arange(10,20)))
+    fig.add_scatter3d(x=data[20:26, 0], y=data[20:26, 1], z=data[20:26, 2], mode='markers', hovertext=np.char.mod('%d', np.arange(20,31)))
     # Customize the appearance, labels, and title as needed
     fig.update_traces(marker=dict(size=2))  # Adjust marker size
     fig.update_layout(scene=dict(aspectmode='cube'))  # Equal aspect ratio
@@ -87,57 +87,75 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     plot_31_points_3d(shift_positive)
 
     transformed = np.ndarray(shape=data.shape)
+    radius_vals = np.ndarray(shape=(transformed.shape[0], transformed.shape[1]-1))
+    original_dim = shift_positive.copy()
 
     for dim in range(transformed.shape[1]-1):
-        linearize = np.ndarray(transformed.shape[0])
-        radius_vals = np.ndarray(linearize.shape)
+        reduced_dim = np.ndarray(shape=(original_dim.shape[0], original_dim.shape[1]-1))
+        radius_vals[:, -dim-1] = np.linalg.norm(original_dim, axis=1)
+        #print(radius_vals[:, -dim-1])
 
+        for samp in range(transformed.shape[0]):
+            reduced_vector = np.delete(original_dim[samp, :].copy(), -1)
+            reduced_dim[samp, :] = reduced_vector*np.linalg.norm(reduced_vector)*(1/radius_vals[samp, -dim-1])
+            
+        original_dim = reduced_dim.copy()
+        if dim == 0:
+            plot_31_points_2d(reduced_dim, block = False)
+    
+    plot_31_points_1d(reduced_dim, block=False)
+    #print(reduced_dim, radius_vals[:, 0])
+    centralize = reduced_dim.ravel() - (radius_vals[:, 0]/2)
+    plot_31_points_1d(centralize, block=False)
+    #print(radius_vals[:, 0]/2)
+    #print(reduced_dim)
+    transformed[:, 0] = centralize
+#########old
+    """     
+    radius_vals = np.linalg.norm(shift_positive[:, dim:dim+2], axis=1)
+        if dim == 1:
+            radius_vals = np.ones(31)
+
+        x_vals = shift_positive[:, dim]
+        y_vals = shift_positive[:, dim+1]
+        linearize = np.ndarray(x_vals.shape)
         for e in range(linearize.shape[0]):
-            obs = shift_positive[e, :]
-            max_dim = np.argmax(obs)
-            if max_dim == 0:
-                linearize[e] = np.square(obs[0])
-                radius_vals[e] =  1
+            if x_vals[e] >= y_vals[e]:
+                linearize[e] = np.square(x_vals[e])*(1/radius_vals[e])
             else:
-                radius = np.linalg.norm(obs[0:max_dim+1])
-                radius_vals[e] = radius
-                linearize[e] = radius - np.square(obs[max_dim])
+                linearize[e] = radius_vals[e] - (np.square(y_vals[e])*(1/radius_vals[e]))
+        plot_31_points_1d(linearize, block=False)
 
-        radius_vals = radius_vals/2
-        centralize = linearize - radius_vals
+        centralize = linearize - (radius_vals/2)
         plot_31_points_1d(centralize, block=False)
 
-        transformed[:, 0] = centralize
-
-
+        radius_vals = np.square(radius_vals/2)"""
+###########
+    sum_squared_old_dims = np.zeros(shape=(transformed.shape[0]))
+    
     for dim in range(transformed.shape[1]-1):
         pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
         np.nan_to_num(pull_direction, copy=False)
 
-        radius_vals = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
-
-        radius_vals = np.square(radius_vals/2)
-
-        sum_squared_old_dims = np.zeros(shape=(radius_vals.shape))
+        radius_this_dim = np.square(radius_vals[:, dim]/2)
+        #radius_this_dim = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
+        #radius_this_dim = np.square(radius_this_dim/2)
 
         #print(radius_vals)
 
-        for cumulative in range(dim+1):
-            sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, cumulative])
-            if dim == 1:
-                print(sum_squared_old_dims[15]+radius_vals[15])
-                print(pull_direction[15])
-        #print(sum_squared_old_dims)
+        sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, dim])
 
-        transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_vals))*pull_direction
+
+        transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
 
     #print(transformed)
     #plot_31_points_2d(transformed, block=True)
     plot_31_points_3d(transformed)
     #plot_31_points_1d(np.arange(0, 31), block=True)
 
-    print(transformed)
+    #print(transformed)
     plot_31_points_2d(transformed[:, 0:2], block=True)
+    print(transformed)
     return transformed
 
 def make_order_vector(vector: np.array) -> np.array:
@@ -156,13 +174,14 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     for obsv in range(len(data)):
         #if make_order_vector(absolute_cosine_distance[:, obsv]) != make_order_vector(test_distance[:, obsv]):
-        #print(make_order_vector(absolute_cosine_distance[:, obsv]))
-        #print(make_order_vector(test_distance[:, obsv]))
+        print(make_order_vector(absolute_cosine_distance[:, obsv]))
+        print(make_order_vector(test_distance[:, obsv]))
         if not all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, obsv]) - make_order_vector(test_distance[:, obsv]))):
             consistent_metric_order = False
 
     #print(all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, 0]) - make_order_vector(test_distance[:, 0]))))
     return consistent_metric_order
+
 
 """
 # Number of points to generate
@@ -206,6 +225,37 @@ def fibonacci_sphere(samples=100):
 data_3d = fibonacci_sphere(31)
 
 data_3d = np.where(data_3d==0, 0.00001, data_3d)
+
+l = [[np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333)],
+     [np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333)],
+     [np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333)],
+     [np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [np.sqrt(0.5), 0, np.sqrt(0.5)],
+     [np.sqrt(0.5), np.sqrt(0.5), 0],
+     [0, np.sqrt(0.5), np.sqrt(0.5)],
+     [-np.sqrt(0.5), 0, np.sqrt(0.5)],
+     [-np.sqrt(0.5), np.sqrt(0.5), 0],
+     [0, -np.sqrt(0.5), np.sqrt(0.5)],
+     [np.sqrt(0.5), 0, -np.sqrt(0.5)],
+     [np.sqrt(0.5), -np.sqrt(0.5), 0],
+     [0, np.sqrt(0.5), -np.sqrt(0.5)],
+     [-np.sqrt(0.5), 0, -np.sqrt(0.5)],
+     [-np.sqrt(0.5), -np.sqrt(0.5), 0],
+     [0, -np.sqrt(0.5), -np.sqrt(0.5)],
+     [1, 0, 0],
+     [0, 1, 0],
+     [0, 0, 1],
+     [-1, 0, 0],
+     [0, -1, 0],
+     [0, 0, -1]]
+
+data_3d = np.array(l)
+data_3d = np.where(data_3d==0, 0.00001, data_3d)
+
 
 
 
