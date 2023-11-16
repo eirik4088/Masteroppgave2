@@ -125,12 +125,12 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         print(1/radius)
         print(atm[:, 0])
-        new[:, 0] = np.square(atm[:, 0])*(1/radius)
+        new[:, 0] = np.square(atm[:, 0])
         plot_31_points_1d(new[:, 0], block=False)
 
         radius = radius/2
 
-        new[:, 0] = new[:, 0] - (radius/2)
+        new[:, 0] = new[:, 0] - (radius)
         plot_31_points_1d(new[:, 0], block=False)
 
         radius = np.square(radius)
