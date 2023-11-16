@@ -86,30 +86,51 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     #plot_31_points_2d(shift_positive, block=False)
     plot_31_points_3d(shift_positive)
 
-    transformed = np.ndarray(shape=data.shape)
-    radius_vals = np.ndarray(shape=(transformed.shape[0], transformed.shape[1]-1))
-    original_dim = shift_positive.copy()
+    transformed = np.ndarray(shape=(data.shape[0]*2, data.shape[1]*2))
+    for q in range(shift_positive.shape[1]):
+        radius_vals = np.ndarray(shape=(transformed.shape[0], transformed.shape[1]-1))
+        original_dim = shift_positive.copy()
 
-    for dim in range(transformed.shape[1]-1):
-        reduced_dim = np.ndarray(shape=(original_dim.shape[0], original_dim.shape[1]-1))
-        radius_vals[:, -dim-1] = np.linalg.norm(original_dim, axis=1)
-        #print(radius_vals[:, -dim-1])
+        for dim in range(shift_positive.shape[1]-1):
+            reduced_dim = np.ndarray(shape=(original_dim.shape[0], original_dim.shape[1]-1))
+            radius_vals[:, -dim-1] = np.linalg.norm(original_dim, axis=1)
+            #print(radius_vals[:, -dim-1])
 
-        for samp in range(transformed.shape[0]):
-            reduced_vector = np.delete(original_dim[samp, :].copy(), -1)
-            reduced_dim[samp, :] = reduced_vector*np.linalg.norm(reduced_vector)*(1/radius_vals[samp, -dim-1])
-            
-        original_dim = reduced_dim.copy()
-        if dim == 0:
-            plot_31_points_2d(reduced_dim, block = False)
-    
-    plot_31_points_1d(reduced_dim, block=False)
-    #print(reduced_dim, radius_vals[:, 0])
-    centralize = reduced_dim.ravel() - (radius_vals[:, 0]/2)
-    plot_31_points_1d(centralize, block=False)
-    #print(radius_vals[:, 0]/2)
-    #print(reduced_dim)
-    transformed[:, 0] = centralize
+            for samp in range(transformed.shape[0]):
+                reduced_vector = np.delete(original_dim[samp, :].copy(), -1)
+                reduced_dim[samp, :] = reduced_vector*np.linalg.norm(reduced_vector)*(1/radius_vals[samp, -dim-1])
+                
+            original_dim = reduced_dim.copy()
+            if dim == 0:
+                plot_31_points_2d(reduced_dim, block = False)
+        
+        
+        
+        plot_31_points_1d(reduced_dim, block=False)
+        #print(reduced_dim, radius_vals[:, 0])
+        centralize = reduced_dim.ravel() - (radius_vals[:, 0]/2)
+        plot_31_points_1d(centralize, block=False)
+        #print(radius_vals[:, 0]/2)
+        #print(reduced_dim)
+        transformed[:, (q*2)] = centralize
+
+        if q == shift_positive.shape[1]:
+            pull_direction = (data[:, 0] * data[:, -1])/np.abs(data[:, 0] * data[:, -1])
+        else:
+            pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
+        np.nan_to_num(pull_direction, copy=False)
+
+        radius_this_dim = np.square(radius_vals[:, 1]/2)
+        #radius_this_dim = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
+        #radius_this_dim = np.square(radius_this_dim/2)
+
+        #print(radius_vals)
+
+        sum_squared_old_dims = -np.square(transformed[:, (q*2)*2])
+
+
+        transformed[:, (q*2)+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
+
 #########old
     """     
     radius_vals = np.linalg.norm(shift_positive[:, dim:dim+2], axis=1)
@@ -131,7 +152,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         radius_vals = np.square(radius_vals/2)"""
 ###########
-    sum_squared_old_dims = np.zeros(shape=(transformed.shape[0]))
+    """sum_squared_old_dims = np.zeros(shape=(transformed.shape[0]))
     
     for dim in range(transformed.shape[1]-1):
         pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
@@ -146,7 +167,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, dim])
 
 
-        transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
+        transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction"""
 
     #print(transformed)
     #plot_31_points_2d(transformed, block=True)
