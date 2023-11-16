@@ -86,8 +86,8 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     #plot_31_points_2d(shift_positive, block=False)
     plot_31_points_3d(shift_positive)
 
-    transformed = np.ndarray(shape=data.shape)
-    radius_vals = np.ndarray(shape=(transformed.shape[0], transformed.shape[1]-1))
+    transformed = np.ndarray(shape=(data.shape[0], 4))
+    """radius_vals = np.ndarray(shape=(transformed.shape[0], transformed.shape[1]-1))
     original_dim = shift_positive.copy()
 
     for dim in range(transformed.shape[1]-1):
@@ -110,52 +110,54 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     #print(radius_vals[:, 0]/2)
     #print(reduced_dim)
     transformed[:, 0] = centralize
-#########old
-    """     
-    radius_vals = np.linalg.norm(shift_positive[:, dim:dim+2], axis=1)
-        if dim == 1:
-            radius_vals = np.ones(31)
 
-        x_vals = shift_positive[:, dim]
-        y_vals = shift_positive[:, dim+1]
-        linearize = np.ndarray(x_vals.shape)
-        for e in range(linearize.shape[0]):
-            if x_vals[e] >= y_vals[e]:
-                linearize[e] = np.square(x_vals[e])*(1/radius_vals[e])
-            else:
-                linearize[e] = radius_vals[e] - (np.square(y_vals[e])*(1/radius_vals[e]))
-        plot_31_points_1d(linearize, block=False)
-
-        centralize = linearize - (radius_vals/2)
-        plot_31_points_1d(centralize, block=False)
-
-        radius_vals = np.square(radius_vals/2)"""
-###########
     sum_squared_old_dims = np.zeros(shape=(transformed.shape[0]))
-    
-    for dim in range(transformed.shape[1]-1):
+    """
+    for dim in range(2):
         pull_direction = (data[:, dim] * data[:, dim+1])/np.abs(data[:, dim] * data[:, dim+1])
         np.nan_to_num(pull_direction, copy=False)
 
-        radius_this_dim = np.square(radius_vals[:, dim]/2)
+        atm = shift_positive[:, dim:dim+2]
+        plot_31_points_2d(atm, block=True)
+        radius = np.linalg.norm(atm, axis=1)
+        print(radius)
+        new = np.ndarray(shape=(atm.shape))
+
+        print(1/radius)
+        print(atm[:, 0])
+        new[:, 0] = np.square(atm[:, 0])*(1/radius)
+        plot_31_points_1d(new[:, 0], block=False)
+
+        radius = radius/2
+
+        new[:, 0] = new[:, 0] - (radius/2)
+        plot_31_points_1d(new[:, 0], block=False)
+
+        radius = np.square(radius)
+
+        plot_31_points_1d(new[:, 0], block=False)
+
+        new[:, 1] = np.sqrt((-np.square(new[:, 0])+radius))*pull_direction
+
+        #radius_this_dim = np.square(radius_vals[:, dim]/2)
         #radius_this_dim = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
         #radius_this_dim = np.square(radius_this_dim/2)
 
         #print(radius_vals)
 
-        sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, dim])
+        #sum_squared_old_dims = sum_squared_old_dims - np.square(transformed[:, dim])
 
-
-        transformed[:, dim+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
+        plot_31_points_2d(new, block = True)
+        transformed[:, dim*2:(dim*2)+2] = new
 
     #print(transformed)
     #plot_31_points_2d(transformed, block=True)
-    plot_31_points_3d(transformed)
+    #plot_31_points_3d(transformed)
     #plot_31_points_1d(np.arange(0, 31), block=True)
 
     #print(transformed)
-    plot_31_points_2d(transformed[:, 0:2], block=True)
-    print(transformed)
+    #plot_31_points_2d(transformed[:, 0:2], block=True)
+    #print(transformed)
     return transformed
 
 def make_order_vector(vector: np.array) -> np.array:
