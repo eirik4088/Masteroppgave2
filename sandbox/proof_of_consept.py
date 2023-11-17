@@ -95,6 +95,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         #reduced_dim = np.ndarray(shape=(original_dim.shape[0], original_dim.shape[1]-1))
         reduced_dim = shift_positive[:, 0:2]
+        plot_31_points_2d(reduced_dim, block = False)
         radius_vals = np.linalg.norm(reduced_dim, axis=1)
         #print(radius_vals[:, -dim-1])
 
