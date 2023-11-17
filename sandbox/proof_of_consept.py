@@ -127,9 +127,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         transformed[:, (q*2)+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
 
         permutation = [1, 2, 0]
-        idx = np.empty_like(permutation)
-        idx[permutation] = np.arange(len(permutation))
-        shift_positive[:] = shift_positive[:, idx]
+        shift_positive = shift_positive[:, [1, 2, 0]]
 
 #########old
     """     
