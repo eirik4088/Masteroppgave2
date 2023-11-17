@@ -122,6 +122,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         np.nan_to_num(pull_direction, copy=False)
 
         radius_this_dim = np.square(radius_vals[:, 0]/2)
+        print(radius_this_dim)
         #radius_this_dim = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
         #radius_this_dim = np.square(radius_this_dim/2)
 
@@ -132,10 +133,10 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         transformed[:, (q*2)+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
 
-        permutation = [1, 2, 0]
+        """permutation = [1, 2, 0]
         idx = np.empty_like(permutation)
-        idx[permutation] = np.arange(len(permutation))
-        shift_positive[:] = shift_positive[:, idx]
+        idx[permutation] = np.arange(len(permutation))"""
+        shift_positive = shift_positive[:, [1, 2, 0]]
 
 #########old
     """     
@@ -184,7 +185,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     plot_31_points_2d(transformed[:, 0:2], block=False)
     plot_31_points_2d(transformed[:, 2:4], block=False)
     plot_31_points_2d(transformed[:, 4:6], block=True)
-    print(transformed)
+    #print(transformed)
     return transformed
 
 def make_order_vector(vector: np.array) -> np.array:
