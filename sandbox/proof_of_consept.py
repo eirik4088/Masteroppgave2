@@ -99,7 +99,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
             for samp in range(shift_positive.shape[0]):
                 reduced_vector = np.delete(original_dim[samp, :].copy(), -1)
-                reduced_dim[samp, :] = (reduced_vector - original_dim[samp, -1])#*np.linalg.norm(reduced_vector)*(1/radius_vals[samp, -dim-1])
+                reduced_dim[samp, :] = (reduced_vector - original_dim[samp, -1])+ np.linalg.norm(original_dim[samp, :])
                 
             original_dim = reduced_dim.copy()
             if dim == 0:
@@ -114,16 +114,15 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         plot_31_points_1d(centralize, block=False)
         #print(radius_vals[:, 0]/2)
         #print(reduced_dim)
-        transformed[:, (q*2)] = centralize
+        transformed[:, (q*2)] = centralize.ravel()
 
         if q == shift_positive.shape[1]-1:
-            pull_direction = (data[:, 0] * data[:, -1])/np.abs(data[:, 0] * data[:, -1])
+            pull_direction = (data[:, 0] * data[:, -1])#/np.abs(data[:, 0] * data[:, -1])
         else:
-            pull_direction = (data[:, q] * data[:, q+1])/np.abs(data[:, q] * data[:, q+1])
+            pull_direction = (data[:, q] * data[:, q+1])#/np.abs(data[:, q] * data[:, q+1])
         np.nan_to_num(pull_direction, copy=False)
 
         radius_this_dim = np.square(radius_vals[:, 0])
-        print(radius_this_dim)
         #radius_this_dim = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
         #radius_this_dim = np.square(radius_this_dim/2)
 
