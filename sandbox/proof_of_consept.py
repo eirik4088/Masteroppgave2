@@ -11,14 +11,14 @@ def plot_31_points_1d(data, block):
     plt.figure()
     plt.plot(data[:10], np.zeros((10)),label="Cluster 1", c="r", marker="o")
     plt.scatter(data[10:20], np.zeros((10)), label="Cluster 1", c="g", marker="o")
-    plt.scatter(data[20:26], np.zeros((6)), label="Cluster 1", c="b", marker="o")
+    plt.scatter(data[20:79], np.zeros((59)), label="Cluster 1", c="b", marker="o")
     plt.show(block=block)
 
 def plot_31_points_2d(data, block):
     plt.figure()
     plt.scatter(data[:10, 0], data[:10, 1], label="Cluster 1", c="r", marker="o")
     plt.scatter(data[10:20, 0], data[10:20, 1], label="Cluster 1", c="g", marker="o")
-    plt.scatter(data[20:26, 0], data[20:26, 1], label="Cluster 1", c="b", marker="o")
+    plt.scatter(data[20:79, 0], data[20:79, 1], label="Cluster 1", c="b", marker="o")
     plt.show(block=block)
 
 def plot_31_points_3d(data):
@@ -80,21 +80,19 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
     normalized = unit_normalize(data)
     #plot_31_points_2d(normalized, block=False)
-    plot_31_points_3d(normalized)
+    #plot_31_points_3d(normalized)
 
     shift_positive = np.abs(normalized)
     #plot_31_points_2d(shift_positive, block=False)
-    plot_31_points_3d(shift_positive)
+    #plot_31_points_3d(shift_positive)
 
-    transformed = np.ndarray(shape=(data.shape[0], data.shape[1]*2))
-    for q in range(shift_positive.shape[1]):
-        print(shift_positive)
+    transformed = np.ndarray(shape=(data.shape))
+    for q in range(int(shift_positive.shape[1]/2)):
         #radius_vals = np.ndarray(shape=(shift_positive.shape[0], shift_positive.shape[1]-1))
         #original_dim = shift_positive.copy()
 
-
         #reduced_dim = np.ndarray(shape=(original_dim.shape[0], original_dim.shape[1]-1))
-        reduced_dim = shift_positive[:, 0:2]
+        reduced_dim = shift_positive[:, q*2:(q*2)+2]
         plot_31_points_2d(reduced_dim, block = False)
         radius_vals = np.linalg.norm(reduced_dim, axis=1)
         #print(radius_vals[:, -dim-1])
@@ -109,11 +107,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         #print(reduced_dim)
         transformed[:, (q*2)] = centralize
 
-        if q == shift_positive.shape[1]-1:
-            pull_direction = (data[:, 0] * data[:, -1])/np.abs(data[:, 0] * data[:, -1])
-        else:
-            pull_direction = (data[:, q] * data[:, q+1])/np.abs(data[:, q] * data[:, q+1])
-        np.nan_to_num(pull_direction, copy=False)
+        pull_direction = (data[:, q*2] * data[:, (q*2)+1])/np.abs(data[:, q*2] * data[:, (q*2)+1])
 
         radius_this_dim = np.square(radius_vals/2)
         #radius_this_dim = np.linalg.norm(shift_positive[:, 0:dim+2], axis=1)
@@ -126,8 +120,6 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
         transformed[:, (q*2)+1] = np.sqrt((sum_squared_old_dims+radius_this_dim))*pull_direction
 
-        permutation = [1, 2, 0]
-        shift_positive = shift_positive[:, [1, 2, 0]]
 
 #########old
     """     
@@ -175,8 +167,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     #print(transformed)
     plot_31_points_2d(transformed[:, 0:2], block=False)
     plot_31_points_2d(transformed[:, 2:4], block=False)
-    plot_31_points_2d(transformed[:, 4:6], block=True)
-    print(transformed)
+    #print(transformed)
     return transformed
 
 def make_order_vector(vector: np.array) -> np.array:
@@ -195,14 +186,16 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     for obsv in range(len(data)):
         #if make_order_vector(absolute_cosine_distance[:, obsv]) != make_order_vector(test_distance[:, obsv]):
-        #print(make_order_vector(absolute_cosine_distance[:, obsv]))
-        #print(make_order_vector(test_distance[:, obsv]))
+        print(make_order_vector(absolute_cosine_distance[:, obsv]))
+        print(make_order_vector(test_distance[:, obsv]))
+        print(absolute_cosine_distance[:, obsv])
+        print(test_distance[:, obsv])
         if not all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, obsv]) - make_order_vector(test_distance[:, obsv]))):
             consistent_metric_order = False
-    print(make_order_vector(absolute_cosine_distance[9, :]))
-    print(make_order_vector(test_distance[9, :]))
-    print(absolute_cosine_distance[9, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
-    print(test_distance[9, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
+    #print(make_order_vector(absolute_cosine_distance[9, :]))
+    #print(make_order_vector(test_distance[9, :]))
+    #print(absolute_cosine_distance[9, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
+    #print(test_distance[9, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
     #print(all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, 0]) - make_order_vector(test_distance[:, 0]))))
     return consistent_metric_order
 
@@ -250,32 +243,86 @@ data_3d = fibonacci_sphere(31)
 
 data_3d = np.where(data_3d==0, 0.00001, data_3d)
 
-l = [[np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333)],
-     [-np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333)],
-     [np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333)],
-     [np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333)],
-     [-np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333)],
-     [np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333)],
-     [-np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333)],
-     [-np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333)],
-     [np.sqrt(0.5), 0, np.sqrt(0.5)],
-     [np.sqrt(0.5), np.sqrt(0.5), 0],
-     [0, np.sqrt(0.5), np.sqrt(0.5)],
-     [-np.sqrt(0.5), 0, np.sqrt(0.5)],
-     [-np.sqrt(0.5), np.sqrt(0.5), 0],
-     [0, -np.sqrt(0.5), np.sqrt(0.5)],
-     [np.sqrt(0.5), 0, -np.sqrt(0.5)],
-     [np.sqrt(0.5), -np.sqrt(0.5), 0],
-     [0, np.sqrt(0.5), -np.sqrt(0.5)],
-     [-np.sqrt(0.5), 0, -np.sqrt(0.5)],
-     [-np.sqrt(0.5), -np.sqrt(0.5), 0],
-     [0, -np.sqrt(0.5), -np.sqrt(0.5)],
-     [1, 0, 0],
-     [0, 1, 0],
-     [0, 0, 1],
-     [-1, 0, 0],
-     [0, -1, 0],
-     [0, 0, -1]]
+l = [[np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25)],
+     [-np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25)],
+     [np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25)],
+     [np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25)],
+     [np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25)],
+     [-np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25)],
+     [np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25)],
+     [np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25)],
+     [-np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25)],
+     [np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25)],
+     [-np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25)],
+     [-np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25)],
+     [-np.sqrt(0.25), np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25)],
+     [np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25)],
+     [-np.sqrt(0.25), -np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25)],
+     [-np.sqrt(0.25), np.sqrt(0.25), -np.sqrt(0.25), -np.sqrt(0.25)],
+     [np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333), 0],
+     [-np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333), 0],
+     [np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333), 0],
+     [np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333), 0],
+     [-np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333), 0],
+     [np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333), 0],
+     [-np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333), 0],
+     [-np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333), 0],
+     [np.sqrt(0.33333), np.sqrt(0.33333), 0, np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), np.sqrt(0.33333), 0, np.sqrt(0.33333)],
+     [np.sqrt(0.33333), -np.sqrt(0.33333), 0, np.sqrt(0.33333)],
+     [np.sqrt(0.33333), np.sqrt(0.33333), 0, -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), -np.sqrt(0.33333), 0, np.sqrt(0.33333)],
+     [np.sqrt(0.33333), -np.sqrt(0.33333), 0, -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), np.sqrt(0.33333), 0, -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), -np.sqrt(0.33333), 0, -np.sqrt(0.33333)],
+     [np.sqrt(0.33333), 0, np.sqrt(0.33333), np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), 0, np.sqrt(0.33333), np.sqrt(0.33333)],
+     [np.sqrt(0.33333), 0, -np.sqrt(0.33333), np.sqrt(0.33333)],
+     [np.sqrt(0.33333), 0, np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), 0, -np.sqrt(0.33333), np.sqrt(0.33333)],
+     [np.sqrt(0.33333), 0, -np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), 0, np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [-np.sqrt(0.33333), 0, -np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [0, np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333)],
+     [0, -np.sqrt(0.33333), np.sqrt(0.33333), np.sqrt(0.33333)],
+     [0, np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333)],
+     [0, np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [0, -np.sqrt(0.33333), -np.sqrt(0.33333), np.sqrt(0.33333)],
+     [0, np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [0, -np.sqrt(0.33333), np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [0, -np.sqrt(0.33333), -np.sqrt(0.33333), -np.sqrt(0.33333)],
+     [np.sqrt(0.5), 0, np.sqrt(0.5), 0],
+     [np.sqrt(0.5), np.sqrt(0.5), 0, 0],
+     [0, np.sqrt(0.5), np.sqrt(0.5), 0],
+     [-np.sqrt(0.5), 0, np.sqrt(0.5), 0],
+     [-np.sqrt(0.5), np.sqrt(0.5), 0, 0],
+     [0, -np.sqrt(0.5), np.sqrt(0.5), 0],
+     [np.sqrt(0.5), 0, -np.sqrt(0.5), 0],
+     [np.sqrt(0.5), -np.sqrt(0.5), 0, 0],
+     [0, np.sqrt(0.5), -np.sqrt(0.5), 0],
+     [-np.sqrt(0.5), 0, -np.sqrt(0.5), 0],
+     [-np.sqrt(0.5), -np.sqrt(0.5), 0, 0],
+     [0, -np.sqrt(0.5), -np.sqrt(0.5), 0],
+     [0, 0, np.sqrt(0.5), np.sqrt(0.5)],
+     [0, 0, -np.sqrt(0.5), np.sqrt(0.5)],
+     [0, np.sqrt(0.5), 0, np.sqrt(0.5)],
+     [0, -np.sqrt(0.5), 0, np.sqrt(0.5)],
+     [np.sqrt(0.5), 0, 0, np.sqrt(0.5)],
+     [-np.sqrt(0.5), 0, 0, np.sqrt(0.5)],
+     [0, 0, np.sqrt(0.5), -np.sqrt(0.5)],
+     [0, 0, -np.sqrt(0.5), -np.sqrt(0.5)],
+     [0, np.sqrt(0.5), 0, -np.sqrt(0.5)],
+     [0, -np.sqrt(0.5), 0, -np.sqrt(0.5)],
+     [np.sqrt(0.5), 0, 0, -np.sqrt(0.5)],
+     [-np.sqrt(0.5), 0, 0, -np.sqrt(0.5)],
+     [1, 0, 0, 0],
+     [0, 1, 0, 0],
+     [0, 0, 1, 0],
+     [-1, 0, 0, 0],
+     [0, -1, 0, 0],
+     [0, 0, -1, 0],
+     [0, 0, 0, 1],
+     [0, 0, 0, -1]]
 
 data_3d = np.array(l)
 data_3d = np.where(data_3d==0, 0.00001, data_3d)
