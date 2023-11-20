@@ -204,11 +204,16 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     for obsv in range(len(data)):
         #if make_order_vector(absolute_cosine_distance[:, obsv]) != make_order_vector(test_distance[:, obsv]):
-        print(make_order_vector(absolute_cosine_distance[:, obsv]))
-        print(make_order_vector(test_distance[:, obsv]))
+        #print(make_order_vector(absolute_cosine_distance[:, obsv]))
+        #print(absolute_cosine_distance[8, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
+        #print(make_order_vector(test_distance[:, obsv]))
+        #print(test_distance[obsv, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
         if not all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, obsv]) - make_order_vector(test_distance[:, obsv]))):
             consistent_metric_order = False
-
+    print(make_order_vector(absolute_cosine_distance[9, :]))
+    print(make_order_vector(test_distance[9, :]))
+    print(absolute_cosine_distance[9, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
+    print(test_distance[9, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
     #print(all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, 0]) - make_order_vector(test_distance[:, 0]))))
     return consistent_metric_order
 
