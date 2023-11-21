@@ -11,14 +11,14 @@ def plot_31_points_1d(data, block):
     plt.figure()
     plt.plot(data[:10], np.zeros((10)),label="Cluster 1", c="r", marker="o")
     plt.scatter(data[10:20], np.zeros((10)), label="Cluster 1", c="g", marker="o")
-    plt.scatter(data[20:26], np.zeros((6)), label="Cluster 1", c="b", marker="o")
+    plt.scatter(data[20:79], np.zeros((59)), label="Cluster 1", c="b", marker="o")
     plt.show(block=block)
 
 def plot_31_points_2d(data, block):
     plt.figure()
     plt.scatter(data[:10, 0], data[:10, 1], label="Cluster 1", c="r", marker="o")
     plt.scatter(data[10:20, 0], data[10:20, 1], label="Cluster 1", c="g", marker="o")
-    plt.scatter(data[20:26, 0], data[20:26, 1], label="Cluster 1", c="b", marker="o")
+    plt.scatter(data[20:79, 0], data[20:79, 1], label="Cluster 1", c="b", marker="o")
     plt.show(block=block)
 
 def plot_31_points_3d(data):
@@ -86,9 +86,8 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
     #plot_31_points_2d(shift_positive, block=False)
     plot_31_points_3d(shift_positive)
 
-    transformed = np.ndarray(shape=(data.shape[0], data.shape[1]*2))
-    for q in range(shift_positive.shape[1]):
-        print(shift_positive)
+    transformed = np.ndarray(shape=data.shape)
+    for q in range(2):
         radius_vals = np.ndarray(shape=(shift_positive.shape[0], shift_positive.shape[1]-1))
         original_dim = shift_positive.copy()
 
@@ -115,10 +114,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         #print(reduced_dim)
         transformed[:, (q*2)] = centralize
 
-        if q == shift_positive.shape[1]-1:
-            pull_direction = (data[:, 0] * data[:, -1])/np.abs(data[:, 0] * data[:, -1])
-        else:
-            pull_direction = (data[:, q] * data[:, q+1])/np.abs(data[:, q] * data[:, q+1])
+        pull_direction = (data[:, q*2] * data[:, (q*2)+1])/np.abs(data[:, q*2] * data[:, (q*2)+1])
         np.nan_to_num(pull_direction, copy=False)
 
         radius_this_dim = np.square(radius_vals[:, 0]/2)
@@ -136,7 +132,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         """permutation = [1, 2, 0]
         idx = np.empty_like(permutation)
         idx[permutation] = np.arange(len(permutation))"""
-        shift_positive = shift_positive[:, [1, 2, 0]]
+        shift_positive = shift_positive[:, [2, 3, 0, 1]]
 
 
 #########old
@@ -184,8 +180,8 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
 
     #print(transformed)
     plot_31_points_2d(transformed[:, 0:2], block=False)
-    plot_31_points_2d(transformed[:, 2:4], block=False)
-    plot_31_points_2d(transformed[:, 4:6], block=True)
+    plot_31_points_2d(transformed[:, 2:4], block=True)
+    #plot_31_points_2d(transformed[:, 4:6], block=True)
     #print(transformed)
     return transformed
 
@@ -205,16 +201,16 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     for obsv in range(len(data)):
         #if make_order_vector(absolute_cosine_distance[:, obsv]) != make_order_vector(test_distance[:, obsv]):
-        #print(make_order_vector(absolute_cosine_distance[:, obsv]))
-        #print(absolute_cosine_distance[8, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
-        #print(make_order_vector(test_distance[:, obsv]))
-        #print(test_distance[obsv, [9, 18,  0,  7,  3,  4, 20, 21, 23, 24,  8, 10, 14, 16, 17, 19, 11, 13, 22,  1,  2,  5,  6, 25, 12, 15]])
+        print(make_order_vector(absolute_cosine_distance[:, obsv]))
+        print(absolute_cosine_distance[:, obsv])
+        print(make_order_vector(test_distance[:, obsv]))
+        print(test_distance[:, obsv])
         if not all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, obsv]) - make_order_vector(test_distance[:, obsv]))):
             consistent_metric_order = False
-    print(make_order_vector(absolute_cosine_distance[20, :]))
-    print(make_order_vector(test_distance[20, :]))
-    print(absolute_cosine_distance[20, [20 ,23 , 8 , 9 ,17 ,18 ,14 ,15 ,11 ,12  ,0  ,7  ,2  ,3  ,4  ,6  ,1  ,5 ,10 ,21 ,22 ,13 ,16 ,19 ,24 ,25]])
-    print(test_distance[20, [20 ,23 , 8 , 9 ,17 ,18 ,14 ,15 ,11 ,12  ,0  ,7  ,2  ,3  ,4  ,6  ,1  ,5 ,10 ,21 ,22 ,13 ,16 ,19 ,24 ,25]])
+    #print(make_order_vector(absolute_cosine_distance[20, :]))
+    #print(make_order_vector(test_distance[20, :]))
+    #print(absolute_cosine_distance[20, [20 ,23 , 8 , 9 ,17 ,18 ,14 ,15 ,11 ,12  ,0  ,7  ,2  ,3  ,4  ,6  ,1  ,5 ,10 ,21 ,22 ,13 ,16 ,19 ,24 ,25]])
+    #print(test_distance[20, [20 ,23 , 8 , 9 ,17 ,18 ,14 ,15 ,11 ,12  ,0  ,7  ,2  ,3  ,4  ,6  ,1  ,5 ,10 ,21 ,22 ,13 ,16 ,19 ,24 ,25]])
     #print(all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, 0]) - make_order_vector(test_distance[:, 0]))))
     return consistent_metric_order
 
