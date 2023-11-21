@@ -106,6 +106,7 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
         plot_31_points_1d(reduced_dim, block=False)"""
         x_vals = shift_positive[:, dim]
         y_vals = shift_positive[:, dim+1]
+        rads = np.linalg.norm(shift_positive[:, dim:dim+2], axis=1)
         linearize = np.ndarray(x_vals.shape)
         for e in range(linearize.shape[0]):
             if x_vals[e] >= y_vals[e]:
@@ -114,13 +115,14 @@ def feature_transform(data: np.ndarray) -> np.ndarray:
                 linearize[e] = 0.25 - np.square(y_vals[e])*(1/0.25)
         plot_31_points_1d(linearize, block=False)
 
-        centralize = linearize - 0.125
+        centralize = linearize - rads/2
+        rads = np.square(rads/2)
         plot_31_points_1d(centralize, block=False)
 
         if dim == 0:
             transformed[:, dim] = centralize
 
-        transformed[:, dim+1] = np.sqrt((-np.square(centralize)+0.015625))*pull_direction
+        transformed[:, dim+1] = np.sqrt((-np.square(centralize)+rads))*pull_direction
 
     #print(transformed)
     plot_31_points_2d(transformed, block=True)
