@@ -6,6 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.spatial.distance import cdist
 
+
 def plot_31_points_1d(data, block):
     plt.figure()
     plt.plot(data[:10], np.zeros((10)),label="Cluster 1", c="r", marker="o")
@@ -157,7 +158,7 @@ def asses_metric_order(distance_func, data: np.ndarray):
 
     #print(all(v == 0 for v in (make_order_vector(absolute_cosine_distance[:, 0]) - make_order_vector(test_distance[:, 0]))))
     return consistent_metric_order
-
+"""
 
 # Number of points to generate
 num_points = 31
@@ -175,7 +176,7 @@ print(asses_metric_order(cdist, data_2d))
 data = feature_transform(data_2d)
             #np.hstack((np.abs(data_all), (((data_all[:, 0] * data_all[:, 1])/np.abs((data_all[:, 0] * data_all[:, 1])))*np.sqrt(data_all[:, 0] + data_all[:, 1] - 1)).reshape((len(data_all), 1))))
 
-"""def fibonacci_sphere(samples=100):
+def fibonacci_sphere(samples=100):
 
     points = np.ndarray(shape=(31, 3))
     phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
