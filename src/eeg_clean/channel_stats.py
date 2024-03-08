@@ -17,16 +17,20 @@ class ChannelStats:
     _extended_summary_
     """
 
-    def __init__(self, epoch_quality_object: EpochStats, **kwargs) -> None:
-        self.epoch_obj = epoch_quality_object.epoch_obj
-        self.quasi_baseline = np.mean(
-            epoch_quality_object.quasi_stability.mean_abs_stab
+    def __init__(self, mne_epochs_object: mne.Epochs, **kwargs) -> None:
+        self.epoch_obj = mne_epochs_object
+        epoch_stats_object = EpochStats(self.epoch_obj, **kwargs)
+        epoch_stats_object.calc_stability(**kwargs)
+        self._quasi_baseline = np.mean(
+            epoch_stats_object.quasi_stability.get_mean_abs_stab()
         )
-        self.peak_baseline = np.mean(epoch_quality_object.peak_stability.mean_abs_stab)
-        self.ch_name_list = self.epoch_obj.info["ch_names"]
+        self._peak_baseline = np.mean(epoch_stats_object.peak_stability.get_mean_abs_stab())
+        self._pca_baseline, _ = epoch_stats_object.pca_auc(**kwargs)
+        self.ch_name_list = np.array(self.epoch_obj.info["ch_names"])
         self.n_channels = len(self.ch_name_list)
         self.quasi_stab_change = np.ndarray((self.n_channels))
         self.peak_stab_change = np.ndarray((self.n_channels))
+        self.pca_auc_change = np.ndarray((self.n_channels))
         self._leave_one_out(**kwargs)
 
     def _leave_one_out(self, **kwargs) -> None:
@@ -34,10 +38,12 @@ class ChannelStats:
             instance = self._drop_channel(self.epoch_obj, self.ch_name_list[c])
             stab_instance = EpochStats(instance, **kwargs)
             stab_instance.calc_stability(**kwargs)
-            quasi_stab = np.mean(stab_instance.quasi_stability.mean_abs_stab)
-            peak_stab = np.mean(stab_instance.peak_stability.mean_abs_stab)
-            self.quasi_stab_change[c] = quasi_stab - self.quasi_baseline
-            self.peak_stab_change[c] = peak_stab - self.peak_baseline
+            quasi_stab = np.mean(stab_instance.quasi_stability.get_mean_abs_stab())
+            peak_stab = np.mean(stab_instance.peak_stability.get_mean_abs_stab())
+            pca_auc, _ = stab_instance.pca_auc(**kwargs)
+            self.quasi_stab_change[c] = quasi_stab - self._quasi_baseline
+            self.peak_stab_change[c] = peak_stab - self._peak_baseline
+            self.pca_auc_change[c] = pca_auc - self._pca_baseline
 
     def _drop_channel(
         self, mne_epoch_object: mne.Epochs, channel_name: str

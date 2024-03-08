@@ -1,4 +1,11 @@
-class nSignChan:
+"""_summary_
+
+    _extended_summary_
+    """
+import numpy as np
+import mne
+
+class SignificantChannels:
     def __init__(self, mne_epochs_obj):
         self.data = mne_epochs_obj
         self.score = None

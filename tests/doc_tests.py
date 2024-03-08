@@ -1,8 +1,10 @@
+"""Script to run all doctests from every module in the package.
+ """
 import unittest
 import doctest
 from stability import similarity, epoch_stability
 from plotting import templates
-from eeg_clean import channel_stats, epoch_stats, stability_clean
+from eeg_clean import channel_stats, clean, epoch_stats
 from data_quality import ica_score, n_sign_chan
 
 suite = doctest.DocTestSuite(similarity)
@@ -20,7 +22,7 @@ unittest.TextTestRunner().run(suite)
 suite = doctest.DocTestSuite(epoch_stats)
 unittest.TextTestRunner().run(suite)
 
-suite = doctest.DocTestSuite(stability_clean)
+suite = doctest.DocTestSuite(clean)
 unittest.TextTestRunner().run(suite)
 
 suite = doctest.DocTestSuite(ica_score)

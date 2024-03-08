@@ -1,3 +1,8 @@
+"""_summary_
+
+    _extended_summary_
+    """
+
 import dataclasses
 import warnings
 from typing import Callable
@@ -80,7 +85,12 @@ class Similarity:
         ValueError
             _description_
         """
-        self.__same_length(v1, v2)
+        self._validate_arraytype(v1)
+        self._validate_arraytype(v2)
+        self._same_length(v1, v2)
+        self._validate_dim_size(1, v1)
+        self._validate_dim_size(1, v2)
+        self._validate_strtype(similarity_method)
 
         for m in self.get_implemented_measures(function=True):
             if m[0] == similarity_method:
@@ -136,7 +146,7 @@ class Similarity:
         v1_average_ref = v1 - np.mean(v1)
         v2_average_ref = v2 - np.mean(v2)
 
-        if self.__zero_vectors([v1, v2]):
+        if self._is_zero_vector([v1, v2]):
             warnings.warn(
                 "Zero-vector is not suitible for global dissimilarity, \
                           look for nan values in results."
@@ -167,7 +177,7 @@ class Similarity:
         tuple[float, float]
             _description_
         """
-        if self.__zero_vectors([v1, v2]):
+        if self._is_zero_vector([v1, v2]):
             warnings.warn(
                 "Zero-vector is not suitible for cosine similarity, \
                           look for nan values in results."
@@ -183,28 +193,26 @@ class Similarity:
         abs_cosine_similarity = abs(cosine_similarity)
         return cosine_similarity, abs_cosine_similarity
 
-    def __same_length(self, v1: np.ndarray, v2: np.ndarray):
-        """_summary_
-
-        _extended_summary_
-
-        Parameters
-        ----------
-        v1 : np.array
-            _description_
-        v2 : np.array
-            _description_
-
-        Raises
-        ------
-        ValueError
-            _description_
-        """
+    def _same_length(self, v1: np.ndarray, v2: np.ndarray):
         if v1.shape[0] != v2.shape[0]:
             raise ValueError("Vectors v1 and v2 is not the same length.")
 
-    def __zero_vectors(self, vector_list: list[np.array, np.array]):
+    def _is_zero_vector(self, vector_list: list[np.ndarray, np.ndarray]):
         for v in vector_list:
             if np.all(v == 0):
                 return True
         return False
+
+    def _validate_arraytype(self, array: np.ndarray):
+        if not isinstance(array, np.ndarray):
+            raise TypeError(f"Got {type(array)}, when it should be a numpy ndarray.")
+
+    def _validate_dim_size(self, expected_dim: int, array: np.ndarray):
+        if array.ndim != expected_dim:
+            raise ValueError(
+                f"Dimention count of ndarray was {array.ndim}, expected {expected_dim}."
+            )
+
+    def _validate_strtype(self, string: str):
+        if not isinstance(string, str):
+            raise TypeError(f"Got {type(string)}, when it should be a str.")

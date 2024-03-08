@@ -18,19 +18,17 @@ class EpochStats:
 
     def __init__(self, mne_epoch_obj: mne.Epochs, **kwargs):
         self.epoch_obj = mne_epoch_obj
-        self.n_epochs = self.epoch_obj.events.shape[0]
+        self.n_epochs = self.epoch_obj.get_data().shape[0]
         self.peak_stability = PeakStability(self.n_epochs, **kwargs)
         self.quasi_stability = QuasiStability(self.n_epochs, **kwargs)
-        self.n_gfp_peaks = np.zeroes(self.n_epochs)
+        self.n_gfp_peaks = np.zeros(self.n_epochs)
         self.data_at_peaks = None
-        self.gfp_at_peaks = None
 
     def calc_stability(
         self,
         robust_gfp=False,
         gfp_method="l2",
         data_at_peaks=True,
-        gfp_at_peaks=True,
         **_,
     ) -> None:
         """_summary_
@@ -47,28 +45,26 @@ class EpochStats:
         dict[str, dict[str, np.ndarray]]
             _description_
         """
+        epochs_array = self.epoch_obj.get_data()
         for e in range(self.n_epochs):
-            data, peaks, gfp, _ = microstates_clean(
-                self.epoch_obj[e],
+            data, peaks, _, _ = microstates_clean(
+                epochs_array[e, :, :],
                 standardize_eeg=False,
                 normalize=False,
                 gfp_method=gfp_method,
                 sampling_rate=self.epoch_obj.info["sfreq"],
                 robust=robust_gfp,
             )
-            gfp_normed = data / gfp
-            self.quasi_stability.add_stability_stats(gfp_normed[peaks])
+
+            self.quasi_stability.add_stability_stats(data[:, peaks])
             extended_peaks = self._t_minus_one_indices(peaks)
-            self.peak_stability.add_stability_stats(gfp_normed[extended_peaks])
+            self.peak_stability.add_stability_stats(data[:, extended_peaks])
             self.n_gfp_peaks[e] = len(peaks)
 
             if data_at_peaks:
                 self.data_at_peaks = self._data_accumulate(
                     self.data_at_peaks, data, peaks
                 )
-
-            if gfp_at_peaks:
-                self.gfp_at_peaks = self._data_accumulate(self.gfp_at_peaks, gfp, peaks)
 
     def get_peak_stability(self) -> PeakStability:
         """_summary_
@@ -94,7 +90,7 @@ class EpochStats:
         """
         return self.quasi_stability
 
-    def pca_auc(self, data_type="data", sklearn_scaler=None) -> tuple[float, np.array]:
+    def pca_auc(self, sklearn_scaler=None, **_) -> tuple[float, np.array]:
         """_summary_
 
         _extended_summary_
@@ -116,14 +112,7 @@ class EpochStats:
         ValueError
             _description_
         """
-        if data_type == "data":
-            data = self.data_at_peaks.T
-        if data_type == "gfp":
-            data = self.gfp_at_peaks.T
-        if data_type == "gfp_normed_data":
-            data = (self.data_at_peaks / self.gfp_at_peaks).T
-        else:
-            raise ValueError(f"Value {data_type} is not valid for data_type argument.")
+        data = self.data_at_peaks.T
 
         if sklearn_scaler is not None:
             scaler = sklearn_scaler
@@ -168,11 +157,11 @@ class EpochStats:
             _description_
         """
         if data_at_peaks is None:
-            data_at_peaks = data[:, indices]
+            accumulated = data[:, indices]
         else:
-            data_at_peaks = np.concatenate((data_at_peaks, data[:, indices]), axis=1)
+            accumulated = np.concatenate((data_at_peaks, data[:, indices]), axis=1)
 
-        return data_at_peaks
+        return accumulated
 
     def _t_minus_one_indices(self, gfp_peaks_idx: np.array) -> np.array:
         """_summary_
