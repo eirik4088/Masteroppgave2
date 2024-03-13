@@ -18,7 +18,7 @@ class EpochStats:
 
     def __init__(self, mne_epoch_obj: mne.Epochs, **kwargs):
         self.epoch_obj = mne_epoch_obj
-        self.n_epochs = self.epoch_obj.get_data().shape[0]
+        self.n_epochs = self.epoch_obj.get_data(copy=True).shape[0]
         self.peak_stability = PeakStability(self.n_epochs, **kwargs)
         self.quasi_stability = QuasiStability(self.n_epochs, **kwargs)
         self.n_gfp_peaks = np.zeros(self.n_epochs)
@@ -45,7 +45,7 @@ class EpochStats:
         dict[str, dict[str, np.ndarray]]
             _description_
         """
-        epochs_array = self.epoch_obj.get_data()
+        epochs_array = self.epoch_obj.get_data(copy=True)
         for e in range(self.n_epochs):
             data, peaks, _, _ = microstates_clean(
                 epochs_array[e, :, :],

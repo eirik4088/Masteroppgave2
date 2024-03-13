@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import pathlib
 import sklearn
 import mne
@@ -9,10 +10,10 @@ from eeg_clean import clean
 from data_quality import ica_score
 
 # Parameters
-data_set = pathlib.Path(r"C:\Users\Gulbr\MasterOppgave\Data\epilepsy_data")
+data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\epi_data")
 
 subjects = []
-time_starts = [(0.4, 4.92), (0.49, 4.84)]
+time_starts = [(0.76, 5.58), (0.4, 4.92), (0.49, 4.84), (0.62, 4.98), (0.46, 4.7), (0.78, 5.15), (0.72, 5.03), (0.71, 5), (0.57, 4.91), (0.57, 4.82), (1.35, 5.8), (0.58, 4.97), (0.55, 4.91), (0.54, 4.83), (0.68, 5.02), (0.84, 5.2), (0.49, 4.77), (0.58, 4.88), (0.59, 5.43)]
 for pth in data_set.iterdir():
     subjects.append(pth)
 
@@ -21,27 +22,9 @@ channel_peaks = [True, False]
 channel_corr = [True, False]
 channel_pca = [None, sklearn.preprocessing.MinMaxScaler()]
 
-epoch_quasi = [None, 0.4]  # , 0.44, 0.48, 0.52, 0.56, 0.6, 0.64, 0.68, 0.72, 0.76, 0.8]
-epoch_peaks = [None, 0.7]  # , 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9]
+epoch_quasi = [None, 0.4, 0.44, 0.48, 0.52, 0.56, 0.6, 0.64, 0.68, 0.72, 0.76, 0.8]
+epoch_peaks = [None, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9]
 
-
-grid_results = np.empty(
-    (
-        len(subjects),
-        2,
-        len(channel_quasi),
-        len(channel_peaks),
-        len(channel_corr),
-        len(channel_pca),
-        len(epoch_quasi),
-        len(epoch_peaks),
-        5,
-    )
-)
-
-start_times = np.empty((len(subjects), 2))
-
-Q = Queue()
 
 
 def zapline_clean(raw, fline):
@@ -72,31 +55,23 @@ def process(my_index):
         )
     )
     raw = mne.io.read_raw_bdf(subjects[my_index], verbose=False)
+    print(subjects[my_index])
     raw.drop_channels(
         ["SO2", "IO2", "LO1", "LO2", "EXG5", "EXG6", "EXG7", "EXG8", "Status"]
     )
     raw.set_montage("biosemi128", verbose=False)
-    raw.crop(0, 360).load_data()
-    raw.filter(l_freq=1, h_freq=None, verbose=False)
-    raw.filter(l_freq=None, h_freq=100, verbose=False)
-    raw = zapline_clean(raw, 50)
-    raw.resample(sfreq=201, verbose=False)
 
-    ec_start = time_starts[my_index][0] * 1.1
-    ec_stop = ec_start + (4 * 0.9) - 1
-    ec_random_start = round(random.uniform(ec_start, ec_stop), 2)
-    start_times[my_index, 0] = ec_random_start
-    ec = raw.copy().crop(ec_start, ec_start + 1).load_data()
+    for c in range(2):
+        new = raw.copy().crop(time_starts[my_index][c], time_starts[my_index][c]+180).load_data()
+        new.filter(l_freq=1, h_freq=None, verbose=False)
+        new.filter(l_freq=None, h_freq=100, verbose=False)
+        new = zapline_clean(new, 50)
+        new.resample(sfreq=201, verbose=False)
 
-    eo_start = time_starts[my_index][1] * 1.1
-    eo_stop = eo_start + (3 * 0.9) - 1
-    eo_random_start = round(random.uniform(eo_start, eo_stop), 2)
-    start_times[my_index, 1] = eo_random_start
-    eo = raw.copy().crop(ec_start, ec_start + 1).load_data()
-
-    conditions = [ec, eo]
-
-    for c, cond in enumerate(conditions):
+        start = 18
+        stop = 162
+        ec_random_start = round(random.uniform(start, stop), 2)
+        cond = new.copy().crop(ec_random_start, ec_random_start + 60).load_data()
         epochs = mne.make_fixed_length_epochs(cond, 0.5, verbose=False, preload=True)
 
         for cq, chqas in enumerate(channel_quasi):
@@ -201,27 +176,59 @@ def process(my_index):
                                         -np.inf
                                     )
 
-    Q.put((process_results, my_index))
-
+    save_path = data_set / f"epi_grid_{my_index}"
+    np.save(save_path, process_results)
 
 # Run experiments
 if __name__ == "__main__":
-    for d1 in range(grid_results.shape[0]):
-        p0 = Process(target=process, args=(0,))
-        p1 = Process(target=process, args=(1,))
+    p0 = Process(target=process, args=(0,))
+    p1 = Process(target=process, args=(1,))
+    p2 = Process(target=process, args=(2,))
+    p3 = Process(target=process, args=(3,))
+    p4 = Process(target=process, args=(4,))
+    p5 = Process(target=process, args=(5,))
+    p6 = Process(target=process, args=(6,))
+    p7 = Process(target=process, args=(7,))
+    p8 = Process(target=process, args=(8,))
+    p9 = Process(target=process, args=(9,))
+    p10 = Process(target=process, args=(10,))
+    p11 = Process(target=process, args=(11,))
+    p12 = Process(target=process, args=(12,))
+    p13 = Process(target=process, args=(13,))
+    p14 = Process(target=process, args=(14,))
+    p15 = Process(target=process, args=(15,))
 
-        p0.start()
-        p1.start()
+    p0.start()
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    p5.start()
+    p6.start()
+    p7.start()
+    p8.start()
+    p9.start()
+    p10.start()
+    p11.start()
+    p12.start()
+    p13.start()
+    p14.start()
+    p15.start()
 
-        res = Q.get()
-        grid_results[res[1], :, :, :, :, :, :, :, :] = res[0]
-        res = Q.get()
-        grid_results[res[1], :, :, :, :, :, :, :, :] = res[0]
+    p0.join()
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
+    p5.join()
+    p6.join()
+    p7.join()
+    p8.join()
+    p9.join()
+    p10.join()
+    p11.join()
+    p12.join()
+    p13.join()
+    p14.join()
+    p15.join()
 
-        p0.join()
-        p1.join()
-
-        save_path = data_set / "epi_grid"
-        save_times = data_set / "times"
-        np.save(save_path, grid_results)
-        np.save(save_times, start_times)
