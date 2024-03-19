@@ -2,33 +2,47 @@
 import pathlib
 import sklearn
 import mne
-import random
-import pymatreader
 from multiprocessing import Process
 import numpy as np
 from meegkit import dss
-from eeg_clean import clean
+from eeg_clean import clean, epoch_stats
 from data_quality import ica_score
 
 # Parameters
 data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\srm_data")
 
+quasi_dis_path = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Results\srm_data\accumulate\quasi\dis"
+)
+quasi_abs_dis_path = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Results\srm_data\accumulate\quasi\abs_dis"
+)
+peaks_dis_path = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Results\srm_data\accumulate\peaks\dis"
+)
+peaks_abs_dis_path = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Results\srm_data\accumulate\peaks\abs_dis"
+)
+
+
 subjects = []
-for pth in data_set.iterdir():
+for pth in data_set.iterdir():  # remember the results folder for new test runs...
     subjects.append(pth)
 
-channel_quasi = [True, False]
-channel_peaks = [True, False]
-channel_corr = [True, False]
-channel_pca = [None, sklearn.preprocessing.MinMaxScaler()]
+random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 44]
+
+# zapline = [False, True] ?
+channel_quasi = [False, True]
+channel_peaks = [False, True]
+channel_corr = [False, True]
+average = [False, True]
 
 epoch_quasi = [None, 0.4, 0.44, 0.48, 0.52, 0.56, 0.6, 0.64, 0.68, 0.72, 0.76, 0.8]
 epoch_peaks = [None, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9]
 
 
-
 def zapline_clean(raw, fline):
-    data = raw.get_data().T  # Convert mne data to numpy darray
+    data = raw.get_data(verbose=False).T  # Convert mne data to numpy darray
     sfreq = raw.info["sfreq"]  # Extract the sampling freq
     # Apply MEEGkit toolbox function
     out, _ = dss.dss_line(
@@ -47,38 +61,53 @@ def process(my_index):
             len(channel_quasi),
             len(channel_peaks),
             len(channel_corr),
-            len(channel_pca),
+            len(average),
             len(epoch_quasi),
             len(epoch_peaks),
             5,
         )
     )
-    raw = mne.io.read_raw_edf(subjects[my_index], preload=True, verbose=False)
+    raw = mne.io.read_raw_edf(subjects[my_index], verbose=False)
     raw.set_montage("biosemi64", verbose=False)
-    raw.filter(l_freq=1, h_freq=None, verbose=False)
-    raw.filter(l_freq=None, h_freq=100, verbose=False)
-    raw = zapline_clean(raw, 50)
-    raw.resample(sfreq=201, verbose=False)
-    max_ep = raw.get_data().shape[1]/201
 
-    start = 20
-    stop = 160
-    random_start = round(random.uniform(start, stop), 2)
-    eeg = raw.copy().crop(random_start, random_start + 60).load_data()
+    eeg = (
+        raw.copy()
+        .crop(random_start[my_index], random_start[my_index] + 60)
+        .load_data(verbose=False)
+    )
+    eeg.filter(l_freq=1, h_freq=None, verbose=False)
+    eeg.filter(l_freq=None, h_freq=100, verbose=False)
+    eeg = zapline_clean(eeg, 50)
+    eeg.resample(sfreq=201, verbose=False)
     epochs = mne.make_fixed_length_epochs(eeg, 0.5, verbose=False, preload=True)
+
+    h = epoch_stats.EpochStats(epochs)
+    h.calc_stability()
+    np.save(quasi_dis_path / str(my_index), h.quasi_stability.get_mean_stab())
+    np.save(quasi_abs_dis_path / str(my_index), h.quasi_stability.get_mean_abs_stab())
+    np.save(peaks_dis_path / str(my_index), h.peak_stability.get_mean_stab())
+    np.save(peaks_abs_dis_path / str(my_index), h.peak_stability.get_mean_abs_stab())
 
     for cq, chqas in enumerate(channel_quasi):
         for cp, chpea in enumerate(channel_peaks):
             for cr, corr in enumerate(channel_corr):
-                for cd, chpca in enumerate(channel_pca):
+                for a, avr in enumerate(average):
                     processor = clean.Clean(
-                        epochs,
+                        epochs.copy(),
                         sklearn_scaler=sklearn.preprocessing.MinMaxScaler(),
                         quasi=chqas,
                         peaks=chpea,
                         corr=corr,
-                        av_ref=chpca,
+                        av_ref=avr,
                     )
+
+                    if processor.bad_channel_index is not None:
+                        replicate = epochs.copy().drop_channels(
+                            processor.ch_names[processor.bad_channel_index]
+                        )
+                    else:
+                        replicate = epochs.copy()
+
                     for eq, epqas in enumerate(epoch_quasi):
                         for ep, eppea in enumerate(epoch_peaks):
                             if epqas is None:
@@ -119,57 +148,50 @@ def process(my_index):
                                 processor.bad_channel_index is not None
                                 and processor.bad_epoch_index is not None
                             ):
-                                process_results[cq, cp, cr, cd, eq, ep, 0] = (
+                                process_results[cq, cp, cr, a, eq, ep, 0] = (
                                     processor.bad_channel_index.size / 128
                                     + processor.bad_epoch_index.size / 120
                                 )
                             elif processor.bad_channel_index is not None:
-                                process_results[cq, cp, cr, cd, eq, ep, 0] = (
+                                process_results[cq, cp, cr, a, eq, ep, 0] = (
                                     processor.bad_channel_index.size / 128
-                                )
+                                ) * 2
                             elif processor.bad_epoch_index is not None:
-                                process_results[cq, cp, cr, cd, eq, ep, 0] = (
+                                process_results[cq, cp, cr, a, eq, ep, 0] = (
                                     processor.bad_epoch_index.size / 120
-                                )
+                                ) * 2
                             else:
-                                process_results[cq, cp, cr, cd, eq, ep, 0] = 0
+                                process_results[cq, cp, cr, a, eq, ep, 0] = 0
 
-                            if process_results[cq, cp, cr, cd, eq, ep, 0] < 1:
-                                for_ica = epochs.copy()
-                                for_ica.set_eeg_reference()
+                            if process_results[cq, cp, cr, a, eq, ep, 0] < 2:
+                                for_ica = replicate.copy()
+                                for_ica.set_eeg_reference(verbose=False)
 
                                 if processor.bad_epoch_index is not None:
-                                    for_ica.drop(processor.bad_epoch_index)
-
-                                if processor.bad_channel_index is not None:
-                                    for_ica.drop_channels(
-                                        processor.ch_names[
-                                            processor.bad_channel_index
-                                        ]
+                                    for_ica.drop(
+                                        processor.bad_epoch_index, verbose=False
                                     )
 
                                 evaluate = ica_score.IcaScore(for_ica)
-                                process_results[cq, cp, cr, cd, eq, ep, 1] = (
+                                process_results[cq, cp, cr, a, eq, ep, 1] = (
                                     evaluate.get_n_components()[0]
                                 )
-                                process_results[cq, cp, cr, cd, eq, ep, 2] = (
+                                process_results[cq, cp, cr, a, eq, ep, 2] = (
                                     evaluate.get_n_components()[0]
                                     + evaluate.get_n_components()[1]
                                 )
-                                process_results[cq, cp, cr, cd, eq, ep, 3] = (
+                                process_results[cq, cp, cr, a, eq, ep, 3] = (
                                     evaluate.get_explained_var()["eeg"]
                                 )
-                                process_results[cq, cp, cr, cd, eq, ep, 4] = (
+                                process_results[cq, cp, cr, a, eq, ep, 4] = (
                                     evaluate.get_explained_var(bio_components=True)[
                                         "eeg"
                                     ]
                                 )
                             else:
-                                process_results[cq, cp, cr, cd, eq, ep, 1:] = (
-                                    -np.inf
-                                )
+                                process_results[cq, cp, cr, a, eq, ep, 1:] = 0
 
-    save_path = data_set / f"epi_grid_{my_index}"
+    save_path = data_set / f"srm_grid_{my_index}"
     np.save(save_path, process_results)
 
 
@@ -225,5 +247,3 @@ if __name__ == "__main__":
     p13.join()
     p14.join()
     p15.join()
-
-    

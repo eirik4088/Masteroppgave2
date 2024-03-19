@@ -7,6 +7,7 @@ import numpy as np
 import scipy
 import mne
 import sklearn
+import random
 from eeg_clean.epoch_stats import EpochStats
 from eeg_clean.channel_stats import ChannelStats
 
@@ -19,7 +20,7 @@ class Clean:
 
     def __init__(self, mne_epochs_obj: mne.Epochs, av_ref=False, **kwargs) -> None:
         if av_ref:
-            mne_epochs_obj.set_eeg_reference()
+            mne_epochs_obj.set_eeg_reference(verbose=False)
         self.channel_stats = ChannelStats(mne_epochs_obj, **kwargs)
         self.bad_channel_index = self.find_bad_channels(**kwargs)
 
@@ -29,7 +30,6 @@ class Clean:
         self.ch_names = np.array(mne_epochs_obj.info["ch_names"])
 
         if self.bad_channel_index is not None:
-            print(self.bad_channel_index)
             self.epochs_obj = mne_epochs_obj.copy().drop_channels(
                 self.ch_names[self.bad_channel_index]
             )
@@ -41,7 +41,7 @@ class Clean:
         self.bad_epoch_index = None
 
     def find_bad_epochs(
-        self, quasi_args: dict = None, peaks_args: dict = None
+        self, quasi_args: dict = None, peaks_args: dict = None, find_random=False
     ) -> np.ndarray:
         """_summary_
 
@@ -59,12 +59,16 @@ class Clean:
         np.ndarray
             _description_
         """
+        if find_random:
+            self.bad_epoch_index = self._bad_epochs_random()
+            return self.bad_epoch_index
+
         if quasi_args is not None:
             quasi_stability = self.epoch_stats.quasi_stability
             quasi_stab = quasi_stability.get_mean_stab().copy()
             quasi_abs_stab = quasi_stability.get_mean_abs_stab().copy()
             bad_quasi = self._bad_epochs_by_quasi_stab(
-                stab_values=quasi_stab-2, abs_stab_values=quasi_abs_stab, **quasi_args
+                stab_values=quasi_stab - 2, abs_stab_values=quasi_abs_stab, **quasi_args
             )
 
         if peaks_args is not None:
@@ -96,7 +100,15 @@ class Clean:
 
         return np.unique(bad_epoch_index)
 
-    def find_bad_channels(self, quasi: bool, peaks: bool, corr: bool, **_) -> np.ndarray:
+    def find_bad_channels(
+        self,
+        quasi=False,
+        peaks=False,
+        corr=False,
+        find_random=False,
+        top_n = None,
+        **_,
+    ) -> np.ndarray:
         """_summary_
 
         _extended_summary_
@@ -113,28 +125,35 @@ class Clean:
         np.ndarray
             _description_
         """
+
+        if find_random:
+            return self._bad_channels_random()
+        
+        if top_n is not None:
+            return self._top_bad_channels(top_n)
+
         if quasi:
-            quasi_stab = self.channel_stats.quasi_stab_change
+            quasi_stab = self.channel_stats.quasi_stab_change.copy()
             bad_quasi = self._bad_channels_by_skew(quasi_stab)
 
         if peaks:
-            peak_stab = self.channel_stats.peak_stab_change
+            peak_stab = self.channel_stats.peak_stab_change.copy()
             bad_peak = self._bad_channels_by_skew(peak_stab)
 
         if quasi and peaks and bad_peak is not None and bad_quasi is not None:
-            bad_channel_index = np.concatenate((bad_peak, bad_quasi))
+            bad_channel_index = np.concatenate((bad_peak.copy(), bad_quasi.copy()))
 
         elif quasi and bad_quasi is not None:
-            bad_channel_index = bad_quasi
+            bad_channel_index = bad_quasi.copy()
 
         elif peaks and bad_peak is not None:
-            bad_channel_index = bad_peak
+            bad_channel_index = bad_peak.copy()
 
         else:
             bad_channel_index = None
 
         if bad_channel_index is not None:
-            bad_channel_index = np.array(bad_channel_index)
+            bad_channel_index = np.unique(np.array(bad_channel_index))
 
         if corr:
             bad_corr = np.where(self._scale(self.channel_stats.pca_auc_change) > 2)[0]
@@ -147,13 +166,13 @@ class Clean:
                     bad_channel_index = bad_corr
 
         return bad_channel_index
-    
+
     def _scale(self, vals):
         v = vals.reshape(-1, 1)
         scaler = sklearn.preprocessing.StandardScaler()
         noe = scaler.fit_transform(v)
         return noe
-    
+
     def _bad_epochs_by_peaks_stab(
         self,
         method: str,
@@ -224,6 +243,41 @@ class Clean:
 
         raise ValueError(f"Value {method} is not valid for method argument.")
 
+    def _bad_epochs_random(self):
+        quasi_stability = self.epoch_stats.quasi_stability
+        quasi_stab = self._scale(quasi_stability.get_mean_stab().copy())
+        quasi_stab = (quasi_stab / np.max(quasi_stab)) * 0.9
+        quasi_abs_stab = self._scale(quasi_stability.get_mean_abs_stab().copy())
+        quasi_abs_stab = (quasi_abs_stab / np.max(quasi_abs_stab)) * 0.9
+
+        peak_stability = self.epoch_stats.peak_stability
+        peak_stab = self._scale(peak_stability.get_mean_stab().copy())
+        peak_stab = (peak_stab / np.max(peak_stab)) * 0.9
+        peak_abs_stab = self._scale(peak_stability.get_mean_abs_stab().copy())
+        peak_abs_stab = (peak_abs_stab / np.max(peak_abs_stab)) * 0.9
+
+        bad_epochs = []
+
+        for i, qs in enumerate(quasi_stab):
+            if self.__decision(qs):
+                bad_epochs.append(i)
+        for i, qas in enumerate(quasi_abs_stab):
+            if self.__decision(qas):
+                bad_epochs.append(i)
+        for i, ps in enumerate(peak_stab):
+            if self.__decision(ps):
+                bad_epochs.append(i)
+        for i, pas in enumerate(peak_abs_stab):
+            if self.__decision(pas):
+                bad_epochs.append(i)
+
+        if len(bad_epochs) == 0:
+            bad_epochs = None
+        else:
+            bad_epochs = np.unique(bad_epochs)
+
+        return bad_epochs
+
     def _bad_channels_by_skew(self, values: np.ndarray):
         """_summary_
 
@@ -256,6 +310,54 @@ class Clean:
 
         if bad_channels.size == 0:
             bad_channels = None
+
+        return bad_channels
+
+    def _top_bad_channels(self, n: tuple[int, int] = None):
+        quasi_stab = self.channel_stats.quasi_stab_change.copy()
+        peak_stab = self.channel_stats.peak_stab_change.copy()
+
+        bad_channels = []
+
+        quasi_order = np.argsort(quasi_stab)
+        peaks_order = np.argsort(peak_stab)
+
+        for i in quasi_order[-n[0]-1:]:
+            bad_channels.append(i)
+        for q in peaks_order[-n[1]-1:]:
+            bad_channels.append(q)
+
+        bad_channels = np.array(bad_channels[0])
+
+        if bad_channels.size == 0:
+            bad_channels = None
+
+        else:
+            bad_channels = np.unique(bad_channels)
+
+        return bad_channels
+
+    def _bad_channels_random(self):
+        quasi_stab = self._scale(self.channel_stats.quasi_stab_change.copy())
+        quasi_stab = (quasi_stab / max(quasi_stab)) * 0.9
+
+        peak_stab = self._scale(self.channel_stats.peak_stab_change.copy())
+        peak_stab = (peak_stab / max(peak_stab)) * 0.9
+
+        bad_channels = []
+
+        for i, qs in enumerate(quasi_stab):
+            if self.__decision(np.abs(qs)):
+                bad_channels.append(i)
+
+        for i, ps in enumerate(peak_stab):
+            if self.__decision(np.abs(ps)):
+                bad_channels.append(i)
+
+        if len(bad_channels) == 0:
+            bad_channels = None
+        else:
+            bad_channels = np.unique(bad_channels)
 
         return bad_channels
 
@@ -328,3 +430,6 @@ class Clean:
             bad_index = None
 
         return bad_index
+
+    def __decision(self, probability):
+        return random.random() < probability

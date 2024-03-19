@@ -56,7 +56,6 @@ class IcaScore:
         if bio_components:
             idx = np.concatenate((self._brain_components, self._bio_artifacts))
             if idx.size > 0:
-                print(idx)
                 return self.ica.get_explained_variance_ratio(self.epoch_obj, components=idx)
             return {'eeg': 0}
         if self._brain_components.size > 0:
@@ -72,8 +71,9 @@ class IcaScore:
             method="infomax",
             random_state=97,
             fit_params=dict(extended=True),
+            verbose=False,
         )
-        ica.fit(self.epoch_obj)
+        ica.fit(self.epoch_obj, verbose=False)
         ica_labels = label_components(self.epoch_obj, ica, method="iclabel")
         return ica, ica_labels
 

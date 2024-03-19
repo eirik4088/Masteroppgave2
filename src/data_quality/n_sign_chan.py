@@ -17,9 +17,3 @@ class SignificantChannels:
 
     def _n_signficant_channels(self):
         return 'inconclusive'
-
-def test():
-    print("riktig?")
-
-if __name__ == "__main__":
-    pass

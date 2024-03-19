@@ -2,6 +2,7 @@ import scipy
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
 
 
 def plot_dist_hist(
@@ -78,3 +79,40 @@ def plot_dist_hist(
             f"Kurtosis: {round(scipy.skew.kurtosis(values), 1)}",
             fontsize=6,
         )
+
+
+def plot_dens_scatter(
+    x_values: np.ndarray,
+    y_values: np.ndarray,
+    title: str,
+    x_label: str,
+    y_label: str,
+    dens_on_top = False,
+):
+    x = x_values.copy().flatten()
+    y = y_values.copy().flatten()
+    # Calculate the point density
+    xy = np.vstack([x, y])
+    z = gaussian_kde(xy)(xy)
+
+    if dens_on_top:
+        # Sort the points by density, so that the densest points are plotted last
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
+
+    fig, ax = plt.subplots()
+    plt.scatter(x, y, c=z, s=10)
+    plt.title = title
+    plt.xlabel = x_label
+    plt.ylabel = y_label
+    plt.show()
+
+def plot_n_boxplots(data_lists: list[np.ndarray], colors: list):
+    sns.boxplot(
+        data=data_lists,
+        palette=colors,
+        showmeans=True,
+    )
+
+if __name__ == "__main__":
+    pass
