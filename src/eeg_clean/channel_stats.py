@@ -22,9 +22,9 @@ class ChannelStats:
         epoch_stats_object = EpochStats(self.epoch_obj, **kwargs)
         epoch_stats_object.calc_stability(**kwargs)
         self._quasi_baseline = np.mean(
-            epoch_stats_object.quasi_stability.get_mean_abs_stab()
+            epoch_stats_object.quasi_stability.get_mean_stab()
         )
-        self._peak_baseline = np.mean(epoch_stats_object.peak_stability.get_mean_abs_stab())
+        self._peak_baseline = np.mean(epoch_stats_object.peak_stability.get_mean_stab())
         self._pca_baseline, _ = epoch_stats_object.pca_auc(**kwargs)
         self.ch_name_list = np.array(self.epoch_obj.info["ch_names"])
         self.n_channels = len(self.ch_name_list)
@@ -38,8 +38,8 @@ class ChannelStats:
             instance = self._drop_channel(self.epoch_obj, self.ch_name_list[c])
             stab_instance = EpochStats(instance, **kwargs)
             stab_instance.calc_stability(**kwargs)
-            quasi_stab = np.mean(stab_instance.quasi_stability.get_mean_abs_stab())
-            peak_stab = np.mean(stab_instance.peak_stability.get_mean_abs_stab())
+            quasi_stab = np.mean(stab_instance.quasi_stability.get_mean_stab())
+            peak_stab = np.mean(stab_instance.peak_stability.get_mean_stab())
             pca_auc, _ = stab_instance.pca_auc(**kwargs)
             self.quasi_stab_change[c] = quasi_stab - self._quasi_baseline
             self.peak_stab_change[c] = peak_stab - self._peak_baseline
