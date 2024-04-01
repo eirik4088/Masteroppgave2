@@ -21,7 +21,7 @@ subjects = []
 for pth in data_set.iterdir():
     subjects.append(pth)
 
-random_start = random_start = [22, 35, 65, 46, 69, 61, 57, 22, 15, 72, 69, 48, 63, 56, 37, 60]
+random_start = [22, 35, 65, 46, 69, 61, 57, 22, 15, 72, 69, 48, 63, 56, 37, 60]
 
 
 def zapline_clean(raw, fline):

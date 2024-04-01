@@ -1,13 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import scipy
 import mne
 import pathlib
-import sklearn
-import hdbscan
 import seaborn as sns
-import statistics
 from meegkit import dss
 import pymatreader
 
@@ -30,8 +26,8 @@ def zapline_clean(raw, fline):
 
 
 
-data_folder = pathlib.Path(r"C:\Users\Gulbr\MasterOppgave\Data\SPIS")
-file = data_folder / "S05_restingPre_EO.mat"
+data_folder = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\SPIS-Resting-State-Dataset\Pre-SART EEG")
+file = data_folder / "S05_restingPre_EC.mat"
 
 dict = pymatreader.read_mat(file)
 
@@ -45,5 +41,4 @@ raw_lowpass = raw_highpass.copy().filter(l_freq=None, h_freq=100, verbose=False)
 line_noise = zapline_clean(raw_lowpass, 50)
 raw_down_sampled = line_noise.copy().resample(sfreq=200, verbose=False)
 
-raw_down_sampled.set_eeg_reference()
 raw_down_sampled.plot(block=True)

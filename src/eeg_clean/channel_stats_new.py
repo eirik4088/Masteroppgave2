@@ -29,27 +29,30 @@ class ChannelStatsNew:
         self.dists = list(dist_specifics.keys())
 
         if "quasi" in dist_specifics.keys():
-            self._quasi_baseline = self._calc(
+            self._quasi_baseline, _ = self._calc(
                 epoch_stats_object.quasi_stability.get_mean_stab(),
                 **dist_specifics["quasi"],
             )
+            self._quasi_spred_baseline = iqr(self._quasi_baseline)
             self.quasi_stab_change = np.zeros((self.n_channels))
         else:
             self.quasi_stab_change = None
 
         if "peak" in dist_specifics.keys():
-            self._peak_baseline = self._calc(
+            self._peak_baseline, _ = self._calc(
                 epoch_stats_object.peak_stability.get_mean_stab(),
                 **dist_specifics["peak"],
             )
+            self._peak_spred_baseline = iqr(self._peak_baseline)
             self.peak_stab_change = np.zeros((self.n_channels))
         else:
             self.peak_stab_change = None
 
         if "n_peaks" in dist_specifics.keys():
-            self._n_peaks_baseline = self._calc(
+            self._n_peaks_baseline, _ = self._calc(
                 epoch_stats_object.n_gfp_peaks, **dist_specifics["n_peaks"]
             )
+            self._n_peaks_spred_baseline = iqr(self._n_peaks_baseline)
             self.n_peaks_change = np.zeros((self.n_channels))
         else:
             self.n_peaks_change = None
@@ -63,44 +66,52 @@ class ChannelStatsNew:
             stab_instance.calc_stability(**kwargs)
 
             if "quasi" in dist_specifics.keys():
-                quasi_stab = self._calc(
+                quasi_stab, ampl = self._calc(
                     stab_instance.quasi_stability.get_mean_stab(),
+                    spred_baseline=self._quasi_spred_baseline,
                     **dist_specifics["quasi"],
                 )
-                self.quasi_stab_change[c] = quasi_stab - self._quasi_baseline
+                self.quasi_stab_change[c] = (quasi_stab - self._quasi_baseline) * ampl
 
             if "peak" in dist_specifics.keys():
-                peak_stab = self._calc(
+                peak_stab, ampl = self._calc(
                     stab_instance.peak_stability.get_mean_stab(),
+                    spred_baseline=self._peak_spred_baseline,
                     **dist_specifics["peak"],
                 )
-                self.peak_stab_change[c] = peak_stab - self._peak_baseline
+                self.peak_stab_change[c] = (peak_stab - self._peak_baseline) * ampl
 
             if "n_peaks" in dist_specifics.keys():
-                n_peaks = self._calc(
-                    stab_instance.n_gfp_peaks, **dist_specifics["n_peaks"]
+                n_peaks, ampl = self._calc(
+                    stab_instance.n_gfp_peaks,
+                    spred_baseline=self._n_peaks_spred_baseline,
+                    **dist_specifics["n_peaks"],
                 )
-                self.n_peaks_change[c] = n_peaks - self._n_peaks_baseline
+                self.n_peaks_change[c] = (n_peaks - self._n_peaks_baseline) * ampl
 
-    def _calc(self, values, central, spred_corrected):
+    def _calc(self, values, central, spred_corrected, spred_baseline=None):
+        amplifier = 1
+
         if central == "mean":
             calculated = np.mean(values)
-            if spred_corrected == "IQR":
-                calculated = calculated / iqr(values)
-            if spred_corrected == "var":
-                calculated = calculated / np.var(values)
+            if spred_baseline is not None:
+                if spred_corrected == "IQR":
+                    amplifier = np.abs(spred_baseline - iqr(values))
+                if spred_corrected == "var":
+                    raise NotImplementedError
 
         elif central == "median":
             calculated = np.median(values)
-            if spred_corrected == "IQR":
-                calculated = calculated / iqr(values)
-            if spred_corrected == "var":
-                calculated = calculated / np.var(values)
+            if spred_baseline is not None:
+                if spred_corrected == "IQR":
+                    amplifier = np.abs(spred_baseline - iqr(values))
+                if spred_corrected == "var":
+                    raise NotImplementedError
 
         else:
             raise ValueError("Problems with dis_specifics!")
 
-        return calculated
+        return calculated, amplifier
 
     def _drop_channel(
         self, mne_epoch_object: mne.Epochs, channel_name: str

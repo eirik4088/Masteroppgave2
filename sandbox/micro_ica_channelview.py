@@ -41,3 +41,4 @@ raw_down_sampled = line_noise.copy().resample(sfreq=201, verbose=False)
 
 
 raw_down_sampled.plot(block=True)
+

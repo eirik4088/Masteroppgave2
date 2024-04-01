@@ -23,8 +23,8 @@ class CleanNew:
         while True:
             channel_stats = ChannelStatsNew(self.epochs_obj, **kwargs)
             bad_channel = self.find_bad_channel(channel_stats, **kwargs)
+
             if bad_channel is not None:
-                print("Hello?")
                 self.bad_channel_index.append(bad_channel)
                 self.epochs_obj.drop_channels(self.ch_names[bad_channel])
                 self.ch_names = np.array(self.epochs_obj.info["ch_names"])
@@ -61,22 +61,37 @@ class CleanNew:
         if len(channel_stats.dists) != len(thresholds):
             raise ValueError("The amount of distributions and thresholds do not match.")
 
+        accumulate = []
+
         for i, dist in enumerate(channel_stats.dists):
-            if dist == "quasi":
+
+            if dist == "quasi" and channel_stats.quasi_stab_change is not None:
                 quasi = np.abs(self._scale(channel_stats.quasi_stab_change.copy()))
                 order = np.argsort(quasi)
                 if quasi[order][-1] > thresholds[i]:
-                    return order[-1]
-            if dist == "peak":
-                peak = np.abs(self._scale(channel_stats.n_peaks_change.copy()))
+                    accumulate.append((order[-1], quasi[order][-1]/thresholds[i]))
+                
+            if dist == "peak" and channel_stats.peak_stab_change is not None:
+                peak = np.abs(self._scale(channel_stats.peak_stab_change.copy()))
                 order = np.argsort(peak)
                 if peak[order][-1] > thresholds[i]:
-                    return order[-1]
-            if dist == "n_peaks":
+                    accumulate.append((order[-1], peak[order][-1]/thresholds[i]))
+                
+            if dist == "n_peaks" and channel_stats.n_peaks_change is not None:
                 n_peaks = np.abs(self._scale(channel_stats.n_peaks_change.copy()))
                 order = np.argsort(n_peaks)
                 if n_peaks[order][-1] > thresholds[i]:
-                    return order[-1]
+                    accumulate.append((order[-1], n_peaks[order][-1]/thresholds[i]))
+
+        if len(accumulate) != 0:
+            biggest_value = 0
+
+            for t in accumulate:
+
+                if t[1] > biggest_value:
+                    corresponding_idx = t[0]
+
+            return corresponding_idx
 
         return None
 
