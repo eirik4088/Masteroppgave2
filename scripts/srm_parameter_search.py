@@ -7,6 +7,9 @@ from eeg_clean import clean_new
 from data_quality import ica_score
 
 data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\srm_data")
+old_folder = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Results\srm_data\results_run_2"
+)
 
 subjects = []
 for pth in data_set.iterdir():
@@ -17,7 +20,7 @@ random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 
 quasi = [False, True]
 peak = [False, True]
 central_meassure = ["mean", "median"]
-stds = [2.5, 3.5, 4.5]
+stds = [2, 2.5, 3.5, 4.5]
 
 
 def zapline_clean(raw, fline):
@@ -33,7 +36,8 @@ def zapline_clean(raw, fline):
 
     return cleaned_raw
 
-def evaluate(processor, to_fill:np.ndarray, baseline=None):
+
+def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
     if processor.bad_channel_index is not None:
         to_fill[0] = processor.bad_channel_index.size / 64
@@ -41,36 +45,27 @@ def evaluate(processor, to_fill:np.ndarray, baseline=None):
 
         if baseline is not None:
             return
-        
+
         to_fill[0] = 0
 
-    if to_fill[0] < 1:
+    if to_fill[0] < 0.74:
         for_ica = processor.epochs_obj.copy()
         for_ica.set_eeg_reference(verbose=False)
 
         evaluater = ica_score.IcaScore(for_ica)
-        to_fill[1] = (
-            evaluater.get_n_components()[0]
-        )
-        to_fill[2] = (
-            evaluater.get_n_components()[0]
-            + evaluater.get_n_components()[1]
-        )
-        to_fill[3] = (
-            evaluater.get_explained_var()["eeg"]
-        )
-        to_fill[4] = (
-            evaluater.get_explained_var(bio_components=True)[
-                "eeg"
-            ]
-        )
+        to_fill[1] = evaluater.get_n_components()[0]
+        to_fill[2] = evaluater.get_n_components()[0] + evaluater.get_n_components()[1]
+        to_fill[3] = evaluater.get_explained_var()["eeg"]
+        to_fill[4] = evaluater.get_explained_var(bio_components=True)["eeg"]
         if baseline is not None:
             to_fill[1] = to_fill[1] - baseline[1]
             to_fill[2] = to_fill[2] - baseline[2]
             to_fill[3] = to_fill[3] - baseline[3]
             to_fill[4] = to_fill[4] - baseline[4]
     else:
-        to_fill[1:] = float('nan')
+        to_fill[1:] = float("nan")
+        print("NaN!!!")
+
 
 def process(my_index):
     base_line = np.zeros(5)
@@ -96,6 +91,12 @@ def process(my_index):
             len(stds),
             5,
         )
+    )
+
+    quasi_results = np.pad(np.load(old_folder / "quasi" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
+    peak_results = np.pad(np.load(old_folder / "peak" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
+    combined_results = np.pad(
+        np.load(old_folder / "combined" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0), (1, 0), (0, 0))
     )
 
     raw = mne.io.read_raw_edf(subjects[my_index], verbose=False)
@@ -126,6 +127,8 @@ def process(my_index):
                 for sd, std in enumerate(stds):
 
                     if qb and not pb:
+                        if sd != 0:
+                            continue
                         processor = clean_new.CleanNew(
                             epochs.copy(),
                             thresholds=[std],
@@ -139,6 +142,8 @@ def process(my_index):
                         evaluate(processor, quasi_results[c, sd, :], base_line)
 
                     elif not qb and pb:
+                        if sd != 0:
+                            continue
                         processor = clean_new.CleanNew(
                             epochs.copy(),
                             thresholds=[std + 1],
@@ -154,7 +159,8 @@ def process(my_index):
                     else:
                         for c2, cm2 in enumerate(central_meassure):
                             for sd2, std2 in enumerate(stds):
-
+                                if sd != 0 and sd2 != 0:
+                                    continue
                                 processor = clean_new.CleanNew(
                                     epochs.copy(),
                                     thresholds=[std, std2 + 1],
@@ -175,11 +181,14 @@ def process(my_index):
                                     base_line,
                                 )
 
-    save_folder =  pathlib.Path(r"C:\Users\workbench\eirik_master\Results\srm_data\results_run_2")
+    save_folder = pathlib.Path(
+        r"C:\Users\workbench\eirik_master\Results\srm_data\results_run_2_extended"
+    )
     np.save(save_folder / "base_line" / f"{my_index}", base_line)
     np.save(save_folder / "quasi" / f"{my_index}", quasi_results)
     np.save(save_folder / "peak" / f"{my_index}", peak_results)
     np.save(save_folder / "combined" / f"{my_index}", combined_results)
+
 
 # Run experiments
 if __name__ == "__main__":

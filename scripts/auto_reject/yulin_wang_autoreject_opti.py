@@ -7,38 +7,18 @@ from eeg_clean import clean_new
 from data_quality import ica_score
 from autoreject import AutoReject
 
-data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\epi_data")
+data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\yulin_wang")
 
 subjects = []
-time_starts = [
-    (0.76 * 60, 5.58 * 60),
-    (0.4 * 60, 4.92 * 60),
-    (0.49 * 60, 4.84 * 60),
-    (0.62 * 60, 4.98 * 60),
-    (0.46 * 60, 4.7 * 60),
-    (0.78 * 60, 5.15 * 60),
-    (0.72 * 60, 5.03 * 60),
-    (0.71 * 60, 5 * 60),
-    (0.57 * 60, 4.91 * 60),
-    (0.57 * 60, 4.82 * 60),
-    (1.35 * 60, 5.8 * 60),
-    (0.58 * 60, 4.97 * 60),
-    (0.55 * 60, 4.91 * 60),
-    (0.54 * 60, 4.83 * 60),
-    (0.68 * 60, 5.02 * 60),
-    (0.84 * 60, 5.2 * 60),
-    (0.49 * 60, 4.77 * 60),
-    (0.58 * 60, 4.88 * 60),
-    (0.59 * 60, 5.43 * 60),
-]
-for pth in data_set.iterdir():
-    subjects.append(pth)
+to_include = np.arange(1, 97, 3)
+for i, pth in enumerate(data_set.iterdir()):
+    if i in to_include:
+        subjects.append(pth)
 
 random_start = [
-    [56, 64, 60, 71, 74, 112, 42, 68, 131, 52, 144, 152, 147, 138, 99, 48],
-    [59, 110, 44, 55, 37, 76, 64, 67, 74, 74, 146, 103, 25, 76, 58, 127],
+    [117, 186, 199, 89, 206, 41, 124, 165, 106, 119, 173, 138, 187, 90, 170, 178],
+    [66, 112, 52, 193, 31, 97, 146, 91, 52, 138, 188, 83, 129, 177, 103, 95],
 ]
-
 thresholds = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
 av_ref = [False, True]
 
@@ -95,28 +75,25 @@ def process(my_index):
         )
     )
 
-    raw = mne.io.read_raw_bdf(subjects[my_index], verbose=False)
-
-    raw.drop_channels(
-        ["SO2", "IO2", "LO1", "LO2", "EXG5", "EXG6", "EXG7", "EXG8", "Status"]
-    )
-    raw.set_montage("biosemi128", verbose=False)
-
     for eye in range(2):
+        raw = mne.io.read_raw_brainvision(subjects[my_index + eye], verbose=False)
 
-        new = raw.copy().crop(
-            time_starts[my_index][eye], time_starts[my_index][eye] + 240
-        )
+        if "Cpz" in raw.ch_names:
+            raw.drop_channels("Cpz")
+        raw.set_montage("standard_1020", verbose=False)
+
         cond = (
-            new.copy()
-            .crop(random_start[eye][my_index], random_start[eye][my_index] + 60)
+            raw.copy()
+            .crop(
+                random_start[eye][int(my_index / 2)],
+                random_start[eye][int(my_index / 2)] + 60,
+            )
             .load_data(verbose=False)
         )
         cond.filter(l_freq=1, h_freq=None, verbose=False)
         cond.filter(l_freq=None, h_freq=100, verbose=False)
         cond = zapline_clean(cond, 50)
         cond.resample(sfreq=201, verbose=False)
-
         epochs = mne.make_fixed_length_epochs(cond, 0.5, verbose=False, preload=True)
         evaluate(epochs.copy(), [], base_line)
 
@@ -142,12 +119,12 @@ def process(my_index):
                     bads_name = [epochs_copy.ch_names[idx] for idx in bads_index]
                     epochs_copy.drop_channels(bads_name)
                 else:
-                    bads_name = []
+                    bads_name=[]
 
                 evaluate(epochs_copy, bads_name, results[t, r, :], base_line)
 
         save_folder = pathlib.Path(
-            r"C:\Users\workbench\eirik_master\Results\epi_data\auto_reject"
+            r"C:\Users\workbench\eirik_master\Results\yulin_wang\auto_reject"
         )
         np.save(save_folder / str(eye) / f"{my_index}", results)
 

@@ -72,7 +72,7 @@ def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
         to_fill[0] = 0
 
-    if to_fill[0] < 1:
+    if to_fill[0] < 0.87:
         for_ica = processor.epochs_obj.copy()
         for_ica.set_eeg_reference(verbose=False)
 
@@ -124,10 +124,10 @@ def process(my_index):
     raw.set_montage("biosemi128", verbose=False)
 
     for eye in range(2):
-        quasi_results = np.pad(np.load(old_folder / str(eye) / "quasi"), ((0, 0), (1, 0), (0, 0)))
 
-        peak_results = np.pad(np.load(old_folder / str(eye) / "peak"), ((0, 0), (1, 0), (0, 0)))
-        combined_results = np.pad(np.load(old_folder / str(eye) / "combined"), ((0, 0), (1, 0), (0, 0), (1, 0), (0, 0)))
+        quasi_results = np.pad(np.load(old_folder / str(eye) / "quasi" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
+        peak_results = np.pad(np.load(old_folder / str(eye) / "peak" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
+        combined_results = np.pad(np.load(old_folder / str(eye) / "combined" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0), (1, 0), (0, 0)))
 
         new = raw.copy().crop(time_starts[my_index][eye], time_starts[my_index][eye] + 240)
         cond = (

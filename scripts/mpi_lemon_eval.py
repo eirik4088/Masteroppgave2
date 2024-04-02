@@ -5,43 +5,30 @@ import numpy as np
 from meegkit import dss
 from eeg_clean import clean_new
 from data_quality import ica_score
+from autoreject import AutoReject
+from pyprep import PrepPipeline
 
-data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\mpi_lemon_test")
+data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\mpi_lemon")
 
 subjects = []
-time_starts = [
-    (0.76 * 60, 5.58 * 60),
-    (0.4 * 60, 4.92 * 60),
-    (0.49 * 60, 4.84 * 60),
-    (0.62 * 60, 4.98 * 60),
-    (0.46 * 60, 4.7 * 60),
-    (0.78 * 60, 5.15 * 60),
-    (0.72 * 60, 5.03 * 60),
-    (0.71 * 60, 5 * 60),
-    (0.57 * 60, 4.91 * 60),
-    (0.57 * 60, 4.82 * 60),
-    (1.35 * 60, 5.8 * 60),
-    (0.58 * 60, 4.97 * 60),
-    (0.55 * 60, 4.91 * 60),
-    (0.54 * 60, 4.83 * 60),
-    (0.68 * 60, 5.02 * 60),
-    (0.84 * 60, 5.2 * 60),
-    (0.49 * 60, 4.77 * 60),
-    (0.58 * 60, 4.88 * 60),
-    (0.59 * 60, 5.43 * 60),
-]
 for pth in data_set.rglob("*.vhdr"):
     subjects.append(pth)
 
 random_start = [
-    [56, 64, 60, 71, 74, 112, 42, 68, 131, 52, 144, 152, 147, 138, 99, 48],
-    [59, 110, 44, 55, 37, 76, 64, 67, 74, 74, 146, 103, 25, 76, 58, 127],
+    [0, 4, 2, 6, 4, 6, 0, 4, 4, 0, 4, 6, 0, 6, 4, 6, 6, 2, 0, 4, 0, 2, 6, 0, 6, 0, 6, 2, 6, 6, 2, 6, 6, 0, 2, 0, 6, 4, 0, 2, 6, 6, 0, 6, 2, 6, 6, 2, 0, 0, 6, 0, 4, 6, 2, 2, 0, 2, 6, 4, 6, 0, 4, 2, 0, 6, 4, 6, 0, 6, 6, 4, 2, 4, 4, 6, 4, 2, 4, 2, 4, 6, 2, 2, 2, 4, 2, 4, 2, 0, 6, 2, 2, 4, 6, 2, 4, 2, 0, 0, 2, 6, 0, 2, 0, 4, 0, 0, 0, 0, 0, 0, 4, 6, 0, 6, 4, 0, 4, 4, 6, 0, 2, 6, 0, 2, 6, 4, 6, 2, 4, 0, 4, 6, 4, 4, 2, 4, 2, 0, 4, 4, 2, 4, 4, 4, 4, 6, 0, 4, 6, 0, 2, 4, 6, 0, 0, 0, 0, 0, 6, 0, 0, 6, 4, 0, 4, 6, 6, 0, 2, 6, 4, 6, 0, 2, 4, 2, 2, 4, 2, 6, 4, 6, 2, 4, 0, 0, 6, 6, 2, 6, 2, 2, 6, 0, 2, 2, 4, 2, 6, 4, 2, 0, 2, 6, 0, 2, 2, 0, 2, 4],
+    [5, 3, 3, 3, 7, 7, 5, 3, 7, 1, 5, 5, 1, 1, 5, 3, 5, 7, 7, 3, 3, 5, 5, 3, 5, 3, 3, 1, 3, 1, 5, 7, 5, 1, 3, 3, 1, 7, 7, 3, 1, 7, 1, 5, 1, 5, 7, 1, 5, 3, 3, 7, 1, 3, 1, 1, 5, 3, 1, 5, 1, 3, 7, 5, 7, 5, 3, 7, 1, 7, 7, 5, 7, 5, 7, 1, 7, 1, 5, 1, 7, 7, 1, 1, 3, 3, 5, 5, 3, 7, 5, 1, 1, 5, 5, 7, 7, 1, 5, 5, 3, 7, 3, 5, 7, 5, 3, 3, 5, 1, 3, 5, 5, 1, 7, 7, 5, 3, 1, 1, 1, 3, 7, 1, 3, 3, 5, 3, 5, 7, 1, 3, 1, 1, 7, 5, 5, 1, 7, 5, 3, 3, 1, 5, 5, 7, 1, 1, 1, 3, 5, 5, 5, 5, 7, 5, 7, 1, 3, 1, 7, 1, 3, 5, 3, 7, 3, 5, 1, 3, 7, 1, 7, 1, 1, 7, 7, 1, 5, 3, 1, 5, 1, 7, 7, 3, 7, 3, 7, 3, 5, 3, 5, 7, 3, 7, 3, 7, 1, 3, 7, 7, 3, 7, 7, 5, 7, 5, 5, 7, 7, 5],
 ]
 
-quasi = [False, True]
-peak = [False, True]
-central_meassure = ["mean", "median"]
-stds = [2.5, 3.5, 4.5]
+quasi = True
+peak = True
+central_meassure_q = "mean"
+central_meassure_p = "mean"
+std_q = 3
+std_p = 3
+
+autorej_thr = 0.4
+av_ref = True
+
 
 
 def zapline_clean(raw, fline):
@@ -58,10 +45,33 @@ def zapline_clean(raw, fline):
     return cleaned_raw
 
 
+def get_event_times(mne_raw):
+    events, events_mapping = mne.events_from_annotations(mne_raw, event_id="auto")
+    ec = 210
+    eo = 200
+    start_times = []
+    end_times = []
+    previous = [np.inf, np.inf, np.inf]
+
+    for i in events:
+        if i[2] == ec or i[2] == eo:
+            if i[2] != previous[2]:
+                start_times.append(i[0] / 2500)
+
+        else:
+            if previous[2] == ec or previous[2] == eo:
+                end_times.append(previous[0] / 2500)
+
+        previous = i
+        end_times.append(previous[0] / 2500)
+
+    return start_times, end_times
+
+
 def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
     if processor.bad_channel_index is not None:
-        to_fill[0] = processor.bad_channel_index.size / 128
+        to_fill[0] = processor.bad_channel_index.size / 61
     else:
 
         if baseline is not None:
@@ -69,7 +79,7 @@ def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
         to_fill[0] = 0
 
-    if to_fill[0] < 1:
+    if to_fill[0] < 0.73:
         for_ica = processor.epochs_obj.copy()
         for_ica.set_eeg_reference(verbose=False)
 
@@ -87,115 +97,128 @@ def evaluate(processor, to_fill: np.ndarray, baseline=None):
         to_fill[1:] = float("nan")
 
 
+def evaluate_autorej(epochs, bad_channels, to_fill: np.ndarray, baseline=None):
+
+    if len(bad_channels) > 0:
+        to_fill[0] = len(bad_channels) / 128
+    else:
+
+        if baseline is not None:
+            return
+
+        to_fill[0] = 0
+
+    if to_fill[0] < 1:
+        epochs.set_eeg_reference(verbose=False)
+
+        evaluater = ica_score.IcaScore(epochs)
+        to_fill[1] = evaluater.get_n_components()[0]
+        to_fill[2] = evaluater.get_n_components()[0] + evaluater.get_n_components()[1]
+        to_fill[3] = evaluater.get_explained_var()["eeg"]
+        to_fill[4] = evaluater.get_explained_var(bio_components=True)["eeg"]
+        if baseline is not None:
+            to_fill[1] = to_fill[1] - baseline[1]
+            to_fill[2] = to_fill[2] - baseline[2]
+            to_fill[3] = to_fill[3] - baseline[3]
+            to_fill[4] = to_fill[4] - baseline[4]
+    else:
+        to_fill[1:] = float("nan")
+
+
 def process(my_index):
     base_line = np.zeros(5)
-    quasi_results = np.zeros(
-        (
-            len(central_meassure),
-            len(stds),
-            5,
-        )
-    )
-    peak_results = np.zeros(
-        (
-            len(central_meassure),
-            len(stds),
-            5,
-        )
-    )
-    combined_results = np.zeros(
-        (
-            len(central_meassure),
-            len(stds),
-            len(central_meassure),
-            len(stds),
-            5,
-        )
-    )
+    results = np.zeroes((4, 5))
 
-    raw = mne.io.read_raw_bdf(subjects[my_index], verbose=False)
+    raw = mne.io.read_raw_brainvision(subjects[my_index], verbose=False)
+    raw.drop_channels("VEOG")
+    raw.set_montage("standard_1020", verbose=False)
 
-    raw.drop_channels(
-        ["SO2", "IO2", "LO1", "LO2", "EXG5", "EXG6", "EXG7", "EXG8", "Status"]
-    )
-    raw.set_montage("biosemi128", verbose=False)
+    start_times, end_times = get_event_times(raw)
 
     for eye in range(2):
 
-        new = raw.copy().crop(time_starts[my_index][eye], time_starts[my_index][eye] + 240)
-        cond = (
-            new.copy()
-            .crop(random_start[eye][my_index], random_start[eye][my_index] + 60)
-            .load_data(verbose=False)
+        current = (
+            raw.copy()
+            .crop(
+                start_times[random_start[eye][my_index]],
+                end_times[random_start[eye][my_index]],
+            )
+            .load_data()
         )
-        cond.filter(l_freq=1, h_freq=None, verbose=False)
+        cond = current.copy().filter(l_freq=1, h_freq=None, verbose=False)
         cond.filter(l_freq=None, h_freq=100, verbose=False)
         cond = zapline_clean(cond, 50)
         cond.resample(sfreq=201, verbose=False)
         epochs = mne.make_fixed_length_epochs(cond, 0.5, verbose=False, preload=True)
 
-        for q, qb in enumerate(quasi):
-            for p, pb in enumerate(peak):
+        base_processor = clean_new.CleanNew(
+            epochs.copy(), dist_specifics={"dummy_key": None}, thresholds=[None]
+        )
+        evaluate(base_processor, base_line)
 
-                if not qb and not pb:
-                    processor = clean_new.CleanNew(
-                        epochs.copy(), dist_specifics={"dummy_key": None}, thresholds=[None]
-                    )
-                    evaluate(processor, base_line)
-                    continue
+        my_processor = clean_new.CleanNew(
+            epochs.copy(),
+            thresholds=[std_q, std_p],
+            dist_specifics={
+                "quasi": {
+                    "central": central_meassure_q,
+                    "spred_corrected": "IQR",
+                },
+                "peak": {
+                    "central": central_meassure_p,
+                    "spred_corrected": "IQR",
+                },
+            },
+        )
+        evaluate(
+            my_processor,
+            results[0, :],
+            base_line,
+        )
 
-                for c, cm in enumerate(central_meassure):
-                    for sd, std in enumerate(stds):
+        epochs_copy = epochs.copy()
+        if av_ref:
+            epochs_copy.set_eeg_reference(verbose=False)
 
-                        if qb and not pb:
-                            processor = clean_new.CleanNew(
-                                epochs.copy(),
-                                thresholds=[std],
-                                dist_specifics={
-                                    "quasi": {
-                                        "central": cm,
-                                        "spred_corrected": "IQR",
-                                    }
-                                },
-                            )
-                            evaluate(processor, quasi_results[c, sd, :], base_line)
+        # Create autoreject object and fit it with the data
+        reject = AutoReject(
+            consensus=[1.0], n_interpolate=[0], random_state=97, verbose=False
+        )
+        reject.fit(epochs_copy)
+        # find where channels are considered bad, and extract the ones that are bad longer then threshold percentage
+        log = reject.get_reject_log(epochs_copy)
+        n_epochs = len(epochs)
+        n_bads = log.labels.sum(axis=0)
+        # Index of bad channels, drop them and evaluate...
+        bads_index = np.where(n_bads > n_epochs * autorej_thr)[0]
 
-                        elif not qb and pb:
-                            processor = clean_new.CleanNew(
-                                epochs.copy(),
-                                thresholds=[std + 1],
-                                dist_specifics={
-                                    "peak": {
-                                        "central": cm,
-                                        "spred_corrected": "IQR",
-                                    }
-                                },
-                            )
-                            evaluate(processor, peak_results[c, sd, :], base_line)
+        if bads_index.size > 0:
+            bads_name = [epochs_copy.ch_names[idx] for idx in bads_index]
+            epochs_copy.drop_channels(bads_name)
+        else:
+            bads_name = []
 
-                        else:
-                            for c2, cm2 in enumerate(central_meassure):
-                                for sd2, std2 in enumerate(stds):
+        evaluate_autorej(epochs_copy, bads_name, results[1, :], base_line)
 
-                                    processor = clean_new.CleanNew(
-                                        epochs.copy(),
-                                        thresholds=[std, std2 + 1],
-                                        dist_specifics={
-                                            "quasi": {
-                                                "central": cm,
-                                                "spred_corrected": "IQR",
-                                            },
-                                            "peak": {
-                                                "central": cm2,
-                                                "spred_corrected": "IQR",
-                                            },
-                                        },
-                                    )
-                                    evaluate(
-                                        processor,
-                                        combined_results[c, sd, c2, sd2, :],
-                                        base_line,
-                                    )
+        # Then implement pyprep
+        montage_kind = "biosemi64"
+        montage = mne.channels.make_standard_montage(montage_kind)
+        # Extract some info
+        sample_rate = raw.info["sfreq"]
+        # Make a copy of the data
+        raw_copy = raw.copy()
+        prep_params = {
+            "ref_chs": "eeg",
+            "reref_chs": "eeg",
+            "line_freqs": np.arange(50, sample_rate / 2, 50),
+        }
+
+        prep = PrepPipeline(raw_copy, prep_params, montage)
+        prep.fit()
+
+        prep = PrepPipeline(raw_copy, prep_params, montage, matlab_strict=True, random_state=435656)
+        prep.fit()
+
 
         save_folder = pathlib.Path(
             r"C:\Users\workbench\eirik_master\Results\epi_data\results_run_2"

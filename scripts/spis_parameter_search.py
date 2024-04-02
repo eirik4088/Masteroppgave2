@@ -10,6 +10,9 @@ import pymatreader
 data_set = pathlib.Path(
     r"C:\Users\workbench\eirik_master\Data\SPIS-Resting-State-Dataset\Pre-SART EEG"
 )
+old_folder = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Results\SPIS-Resting-State-Dataset\results_run_2"
+)
 
 subjects = []
 for pth in data_set.iterdir():
@@ -48,7 +51,7 @@ def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
         to_fill[0] = 0
 
-    if to_fill[0] < 1:
+    if to_fill[0] < 0.74:
         for_ica = processor.epochs_obj.copy()
         for_ica.set_eeg_reference(verbose=False)
 
@@ -90,6 +93,12 @@ def process(my_index):
             len(stds),
             5,
         )
+    )
+
+    quasi_results = np.pad(np.load(old_folder / "quasi" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
+    peak_results = np.pad(np.load(old_folder / "peak" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
+    combined_results = np.pad(
+        np.load(old_folder / "combined" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0), (1, 0), (0, 0))
     )
 
     dict = pymatreader.read_mat(subjects[my_index])
@@ -194,6 +203,10 @@ def process(my_index):
                 for sd, std in enumerate(stds):
 
                     if qb and not pb:
+
+                        if sd != 0:
+                            continue
+
                         processor = clean_new.CleanNew(
                             epochs.copy(),
                             thresholds=[std],
@@ -207,6 +220,8 @@ def process(my_index):
                         evaluate(processor, quasi_results[c, sd, :], base_line)
 
                     elif not qb and pb:
+                        if sd != 0:
+                            continue
                         processor = clean_new.CleanNew(
                             epochs.copy(),
                             thresholds=[std + 1],
@@ -222,7 +237,8 @@ def process(my_index):
                     else:
                         for c2, cm2 in enumerate(central_meassure):
                             for sd2, std2 in enumerate(stds):
-
+                                if sd != 0 and sd2 != 0:
+                                    continue
                                 processor = clean_new.CleanNew(
                                     epochs.copy(),
                                     thresholds=[std, std2 + 1],
@@ -244,7 +260,7 @@ def process(my_index):
                                 )
 
     save_folder = pathlib.Path(
-        r"C:\Users\workbench\eirik_master\Results\SPIS-Resting-State-Dataset\results_run_2"
+        r"C:\Users\workbench\eirik_master\Results\SPIS-Resting-State-Dataset\results_run_2_extended"
     )
     np.save(save_folder / "base_line" / f"{my_index}", base_line)
     np.save(save_folder / "quasi" / f"{my_index}", quasi_results)

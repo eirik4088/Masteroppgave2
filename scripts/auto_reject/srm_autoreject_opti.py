@@ -15,7 +15,7 @@ for pth in data_set.iterdir():
 
 random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 44]
 
-thresholds = [0.6, 0.55, 0.5, 0.45, 0.4]
+thresholds = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
 av_ref = [False, True]
 
 
