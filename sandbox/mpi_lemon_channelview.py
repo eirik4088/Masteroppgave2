@@ -18,11 +18,10 @@ def zapline_clean(raw, fline):
     return cleaned_raw
 
 
-data_folder = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\mpi_lemon_test\sub-032301")
-file = data_folder / "sub-010002.vhdr"
+data_folder = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\mpi_lemon\sub-032528")
+file = data_folder / "sub-010321.vhdr"
 
-raw= mne.io.read_raw_brainvision(file)
-raw = raw.crop(60, 180).load_data()
+raw= mne.io.read_raw_brainvision(file, preload=True)
 raw.drop_channels('VEOG')
 raw.set_montage('standard_1020')
 #raw.drop_channels(['TP9', 'TP10'])

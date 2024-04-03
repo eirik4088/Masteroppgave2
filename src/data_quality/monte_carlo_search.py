@@ -72,4 +72,4 @@ class MonteCarloSearch:
             X.append(psds_band.reshape(len(psds), -1))
 
         data = np.concatenate(X, axis=1)
-        delta = []
+        delta = np.mean(eo[:, 0:61])
