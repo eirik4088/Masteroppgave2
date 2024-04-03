@@ -6,29 +6,37 @@
 import numpy as np
 import pandas as pd
 import mne
+from statsmodels.stats.anova import AnovaRM
 
 
 class MonteCarloSearch:
     def __init__(
-        self,
-        n_samples: np.ndarray,
-        n_repetitions: int,
-        significance_level: float
+        self, epochs_list, repetition_list, significance_level: float
     ):
-        self.n_samples = n_samples
-        self.n_repetitions = n_repetitions
+        self.epoch_objects = epochs_list
+        self.repetition_list = repetition_list
         self.significance = significance_level
 
     def search(self, condition_1: mne.Epochs, condition_2: mne.Epochs):
         return None
-    
-    def _repeated_measures_anova(self, n_subjects):
-        df = pd.DataFrame({'subject': np.repeat(np.arange(n_subjects))})
-        return None
-    
 
-    #Taken directly from mne toturial and augmented slightly
-    def eeg_power_band(self, epochs):
+    def _generate_data(self, repetitions: int, ):
+        for epobj in self.epoch_objects:
+
+        return None
+
+    def _repeated_measures_anova(self, n_subjects, power_means):
+        df = pd.DataFrame(
+            {
+                "subject": np.repeat(np.arange(0, n_subjects, 1), 2),
+                "condition": np.tile(["ec", "eo"], n_subjects),
+                "power": power_means,
+            }
+        )
+        return AnovaRM(data=df, depvar='power', subject='subject', within=['condition']).fit()
+
+    # Taken directly from mne toturial and augmented slightly
+    def _eeg_power_band(self, epochs):
         """EEG relative power band feature extraction.
 
         This function takes an ``mne.Epochs`` object and creates EEG features based
@@ -53,14 +61,15 @@ class MonteCarloSearch:
             "beta": [13.5, 25],
         }
 
-        spectrum = epochs.compute_psd(picks="eeg", fmin=0.5, fmax=30.0, method='welch')
+        spectrum = epochs.compute_psd(picks="eeg", fmin=0.5, fmax=30.0, method="welch")
         psds, freqs = spectrum.get_data(return_freqs=True)
         # Normalize the PSDs
-        #psds /= np.sum(psds, axis=-1, keepdims=True)
+        # psds /= np.sum(psds, axis=-1, keepdims=True)
 
         X = []
         for fmin, fmax in FREQ_BANDS.values():
             psds_band = psds[:, :, (freqs >= fmin) & (freqs < fmax)].mean(axis=-1)
             X.append(psds_band.reshape(len(psds), -1))
 
-        return np.concatenate(X, axis=1)
+        data = np.concatenate(X, axis=1)
+        delta = []
