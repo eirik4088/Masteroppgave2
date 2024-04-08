@@ -4,6 +4,7 @@
     """
 
 import random
+import pathlib
 import numpy as np
 import pandas as pd
 from statsmodels.stats.anova import AnovaRM
@@ -31,10 +32,7 @@ class MonteCarloSearch:
         self.expected_theta_diff = None
         self.expected_alpha_diff = None
         self.expected_beta_diff = None
-        self.delta_track = None
-        self.theta_track = None
-        self.alpha_track = None
-        self.beta_track = None
+        self.temp_folder = pathlib.Path(r"C:\Users\workbench\eirik_master\Results\mpi_lemon\temp")
 
     def search(self):
         expected_diff_count = np.zeros(len(self.repetition_list))
@@ -50,9 +48,13 @@ class MonteCarloSearch:
                 )
                 if delta and theta and alpha and beta:
                     expected_diff_count[r] += 1
+                if delta:
                     expected_delta_diff[r] += 1
+                if theta:
                     expected_theta_diff[r] += 1
+                if alpha:
                     expected_alpha_diff[r] += 1
+                if beta:
                     expected_beta_diff[r] += 1
 
         expected_diff_percentage = expected_diff_count / self.n_resamples
@@ -90,11 +92,11 @@ class MonteCarloSearch:
 
         for epobj in self.epoch_objects:
             random_list = self._random_generator(
-                repetitions, int(epobj.get_data(copy=False).shape[0] / 2)
+                repetitions, int(epobj[ec_marker].get_data(copy=False).shape[0])
             )
             ec_means = self._eeg_power_band(epobj.copy()[ec_marker][random_list])
             random_list = self._random_generator(
-                repetitions, int(epobj.get_data(copy=False).shape[0] / 2)
+                repetitions, int(epobj[eo_marker].get_data(copy=False).shape[0])
             )
             eo_means = self._eeg_power_band(epobj.copy()[eo_marker][random_list])
 
@@ -110,6 +112,35 @@ class MonteCarloSearch:
             ec_accumulated_beta.append(ec_means[3])
             eo_accumulated_beta.append(eo_means[3])
 
+        delta_sign = self._repeated_measures_anova(len(self.epoch_objects), ec_accumulated_delta + eo_accumulated_delta).iloc[0]["Pr > F"]
+        theta_sign = self._repeated_measures_anova(len(self.epoch_objects), ec_accumulated_theta + eo_accumulated_theta).iloc[0]["Pr > F"]
+        alpha_sign = self._repeated_measures_anova(len(self.epoch_objects), ec_accumulated_alpha + eo_accumulated_alpha).iloc[0]["Pr > F"]
+        beta_sign = self._repeated_measures_anova(len(self.epoch_objects), ec_accumulated_beta + eo_accumulated_beta).iloc[0]["Pr > F"]
+        
+        if delta_sign <= self.significance and np.mean(ec_accumulated_delta) > np.mean(
+            eo_accumulated_delta
+        ):
+            expected_delta_diff = True
+        if theta_sign <= self.significance and np.mean(ec_accumulated_theta) > np.mean(
+            eo_accumulated_theta
+        ):
+            expected_theta_diff = True
+        if alpha_sign <= self.significance and np.mean(ec_accumulated_alpha) > np.mean(
+            eo_accumulated_alpha
+        ):
+            expected_alpha_diff = True
+        if beta_sign <= self.significance and np.mean(ec_accumulated_beta) > np.mean(
+            eo_accumulated_beta
+        ):
+            expected_beta_diff = True
+
+        return (
+            expected_delta_diff,
+            expected_theta_diff,
+            expected_alpha_diff,
+            expected_beta_diff,
+        )
+        exit()
         dp = Process(
             target=self._repeated_measures_anova,
             args=(
@@ -153,10 +184,10 @@ class MonteCarloSearch:
         ap.join()
         bp.join()
 
-        delta_sign = self.delta_track.anova_table.iloc[0]["Pr > F"]
-        theta_sign = self.theta_track.anova_table.iloc[0]["Pr > F"]
-        alpha_sign = self.alpha_track.anova_table.iloc[0]["Pr > F"]
-        beta_sign = self.beta_track.anova_table.iloc[0]["Pr > F"]
+        delta_sign = pd.read_csv(self.temp_folder / "delta").iloc[0]["Pr > F"]
+        theta_sign = pd.read_csv(self.temp_folder / "theta").iloc[0]["Pr > F"]
+        alpha_sign = pd.read_csv(self.temp_folder / "alpha").iloc[0]["Pr > F"]
+        beta_sign = pd.read_csv(self.temp_folder / "beta").iloc[0]["Pr > F"]
 
         if delta_sign <= self.significance and np.mean(ec_accumulated_delta) > np.mean(
             eo_accumulated_delta
@@ -186,7 +217,7 @@ class MonteCarloSearch:
         random_list = random.sample(range(0, max_index), repetitions)
         return random_list
 
-    def _repeated_measures_anova(self, n_subjects, power_means, identify):
+    def _repeated_measures_anova(self, n_subjects, power_means):
         df = pd.DataFrame(
             {
                 "subject": np.tile(np.arange(0, n_subjects, 1), 2),
@@ -197,15 +228,10 @@ class MonteCarloSearch:
         analysis = AnovaRM(
             data=df, depvar="power", subject="subject", within=["condition"]
         ).fit()
+        
+        return analysis.anova_table
+        #analysis.anova_table.to_csv(self.temp_folder / identify)
 
-        if identify == "delta":
-            self.delta_track = analysis
-        elif identify == "theta":
-            self.theta_track = analysis
-        elif identify == "alpha":
-            self.alpha_track = analysis
-        else:
-            self.beta_track = analysis
 
     # Taken directly from mne toturial and augmented slightly
     def _eeg_power_band(self, epochs):
@@ -234,7 +260,7 @@ class MonteCarloSearch:
         }
 
         spectrum = epochs.compute_psd(
-            picks="eeg", fmin=0.5, fmax=30.0, method="welch", verbose=False, n_jobs=-1
+            picks="eeg", fmin=0.5, fmax=30.0, method="welch", verbose=False, n_jobs=1
         )
         psds, freqs = spectrum.get_data(return_freqs=True)
         # Normalize the PSDs

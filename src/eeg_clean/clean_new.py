@@ -16,7 +16,7 @@ class CleanNew:
     """
 
     def __init__(self, mne_epochs_obj: mne.Epochs, **kwargs) -> None:
-        self.bad_channel_index = []
+        self.bad_channels = []
         self.epochs_obj = mne_epochs_obj.copy()
         self.ch_names = np.array(self.epochs_obj.info["ch_names"])
 
@@ -25,14 +25,14 @@ class CleanNew:
             bad_channel = self.find_bad_channel(channel_stats, **kwargs)
 
             if bad_channel is not None:
-                self.bad_channel_index.append(bad_channel)
+                self.bad_channels.append(self.ch_names[bad_channel])
                 self.epochs_obj.drop_channels(self.ch_names[bad_channel])
                 self.ch_names = np.array(self.epochs_obj.info["ch_names"])
             else:
                 break
 
-        if len(self.bad_channel_index) > 0:
-            self.bad_channel_index = np.array(self.bad_channel_index)
+        if len(self.bad_channels) > 0:
+            self.bad_channels = np.array(self.bad_channels)
         else:
             self.bad_channel_index = None
 
