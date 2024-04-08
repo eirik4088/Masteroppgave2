@@ -23,7 +23,8 @@ random_start = [22, 35, 65, 46, 69, 61, 57, 22, 15, 72, 69, 48, 63, 56, 37, 60]
 quasi = [False, True]
 peak = [False, True]
 central_meassure = ["mean", "median"]
-stds = [1.5, 2.5, 3.5, 4.5]
+q_stds = [2.5, 3, 3.5, 4]
+p_stds = [3, 3.5, 4.5, 5.5]
 
 
 def zapline_clean(raw, fline):
@@ -74,23 +75,23 @@ def process(my_index):
     quasi_results = np.zeros(
         (
             len(central_meassure),
-            len(stds),
+            len(q_stds),
             5,
         )
     )
     peak_results = np.zeros(
         (
             len(central_meassure),
-            len(stds),
+            len(p_stds),
             5,
         )
     )
     combined_results = np.zeros(
         (
             len(central_meassure),
-            len(stds),
+            len(q_stds),
             len(central_meassure),
-            len(stds),
+            len(p_stds),
             5,
         )
     )
@@ -200,16 +201,13 @@ def process(my_index):
                 continue
 
             for c, cm in enumerate(central_meassure):
-                for sd, std in enumerate(stds):
 
-                    if qb and not pb:
+                if qb and not pb:
 
-                        if sd != 0:
-                            continue
-
+                    for q_sd, q_std in enumerate(q_stds):
                         processor = clean_new.CleanNew(
                             epochs.copy(),
-                            thresholds=[std],
+                            thresholds=[q_std],
                             dist_specifics={
                                 "quasi": {
                                     "central": cm,
@@ -217,14 +215,15 @@ def process(my_index):
                                 }
                             },
                         )
-                        evaluate(processor, quasi_results[c, sd, :], base_line)
+                        evaluate(processor, quasi_results[c, q_sd, :], base_line)
 
-                    elif not qb and pb:
-                        if sd != 0:
-                            continue
+                if not qb and pb:
+
+                    for p_sd, p_std in enumerate(p_stds):
+
                         processor = clean_new.CleanNew(
                             epochs.copy(),
-                            thresholds=[std + 1],
+                            thresholds=[p_std],
                             dist_specifics={
                                 "peak": {
                                     "central": cm,
@@ -232,16 +231,16 @@ def process(my_index):
                                 }
                             },
                         )
-                        evaluate(processor, peak_results[c, sd, :], base_line)
+                        evaluate(processor, peak_results[c, p_sd, :], base_line)
 
-                    else:
+                else:
+                    for q_sd, q_std in enumerate(q_stds):
                         for c2, cm2 in enumerate(central_meassure):
-                            for sd2, std2 in enumerate(stds):
-                                if sd != 0 and sd2 != 0:
-                                    continue
+                            for p_sd, p_std in enumerate(p_stds):
+                                                            
                                 processor = clean_new.CleanNew(
                                     epochs.copy(),
-                                    thresholds=[std, std2 + 1],
+                                    thresholds=[q_std, p_std + 1],
                                     dist_specifics={
                                         "quasi": {
                                             "central": cm,
@@ -255,12 +254,12 @@ def process(my_index):
                                 )
                                 evaluate(
                                     processor,
-                                    combined_results[c, sd, c2, sd2, :],
+                                    combined_results[c, q_sd, c2, p_sd, :],
                                     base_line,
                                 )
 
     save_folder = pathlib.Path(
-        r"C:\Users\workbench\eirik_master\Results\SPIS-Resting-State-Dataset\results_run_2_extended"
+        r"C:\Users\workbench\eirik_master\Results\SPIS-Resting-State-Dataset\results_final"
     )
     np.save(save_folder / "base_line" / f"{my_index}", base_line)
     np.save(save_folder / "quasi" / f"{my_index}", quasi_results)
