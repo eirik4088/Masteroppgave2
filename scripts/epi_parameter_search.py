@@ -7,9 +7,6 @@ from eeg_clean import clean_new
 from data_quality import ica_score
 
 data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\epi_data")
-old_folder = pathlib.Path(
-            r"C:\Users\workbench\eirik_master\Results\epi_data\results_run_2"
-        )
 
 subjects = []
 time_starts = [
@@ -63,8 +60,8 @@ def zapline_clean(raw, fline):
 
 def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
-    if processor.bad_channel_index is not None:
-        to_fill[0] = processor.bad_channel_index.size / 128
+    if processor.bad_channels is not None:
+        to_fill[0] = len(processor.bad_channels) / 128
     else:
 
         if baseline is not None:
@@ -124,10 +121,6 @@ def process(my_index):
     raw.set_montage("biosemi128", verbose=False)
 
     for eye in range(2):
-
-        quasi_results = np.pad(np.load(old_folder / str(eye) / "quasi" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
-        peak_results = np.pad(np.load(old_folder / str(eye) / "peak" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0)))
-        combined_results = np.pad(np.load(old_folder / str(eye) / "combined" / f"{my_index}.npy"), ((0, 0), (1, 0), (0, 0), (1, 0), (0, 0)))
 
         new = raw.copy().crop(time_starts[my_index][eye], time_starts[my_index][eye] + 240)
         cond = (
@@ -191,7 +184,7 @@ def process(my_index):
                                                                 
                                     processor = clean_new.CleanNew(
                                         epochs.copy(),
-                                        thresholds=[q_std, p_std + 1],
+                                        thresholds=[q_std, p_std],
                                         dist_specifics={
                                             "quasi": {
                                                 "central": cm,

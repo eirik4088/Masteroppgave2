@@ -249,7 +249,6 @@ def process(my_index):
         np.save(save_folder / str(eye) / "accumulate" / "my_light"/ "peaks" / "dis" / str(my_index), stats.get_peak_stability().get_mean_stab())
         np.save(save_folder / str(eye) / "accumulate" / "my_light"/ "quasi" / "abs_dis" / str(my_index), stats.get_quasi_stability().get_mean_abs_stab())
         np.save(save_folder / str(eye) / "accumulate" / "my_light"/ "quasi" / "dis" / str(my_index), stats.get_quasi_stability().get_mean_stab())
-        np.save(save_folder / str(eye) / "bad_channels" / "my_light"/ str(my_index), my_processor.bad_channels)
 
         epochs_copy = epochs.copy()
         epochs_copy.set_eeg_reference(verbose=False)

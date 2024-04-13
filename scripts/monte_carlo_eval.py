@@ -415,7 +415,7 @@ for i, sub in enumerate(subjects):
 base_line = MonteCarloSearch(
     epochs_list=base_line_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -430,7 +430,7 @@ np.save(results_folder / "base_line" / "combined", base_line.expected_diff_perce
 my_heavy = MonteCarloSearch(
     epochs_list=my_heavy_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -446,7 +446,7 @@ np.save(results_folder / "my_heavy" / "removed", np.array(my_heavy_removed))
 my_robust = MonteCarloSearch(
     epochs_list=my_robust_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -462,7 +462,7 @@ np.save(results_folder / "my_robust" / "removed", np.array(my_robust_removed))
 my_light = MonteCarloSearch(
     epochs_list=my_light_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -478,7 +478,7 @@ np.save(results_folder / "my_light" / "removed", np.array(my_light_removed))
 heavy_auto = MonteCarloSearch(
     epochs_list=heavy_auto_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -494,7 +494,7 @@ np.save(results_folder / "heavy_auto" / "removed", np.array(heavy_auto_removed))
 light_auto = MonteCarloSearch(
     epochs_list=light_auto_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -510,7 +510,7 @@ np.save(results_folder / "light_auto" / "removed", np.array(light_auto_removed))
 prep = MonteCarloSearch(
     epochs_list=prep_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
@@ -526,7 +526,7 @@ np.save(results_folder / "prep" / "removed", np.array(prep_removed))
 prep_mat = MonteCarloSearch(
     epochs_list=prep_mat_epochs_list,
     n_resamples=1000,
-    repetition_list=[4, 8, 12, 16, 20, 24, 28],
+    repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",

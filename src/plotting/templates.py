@@ -102,9 +102,9 @@ def plot_dens_scatter(
 
     fig, ax = plt.subplots()
     plt.scatter(x, y, c=z, s=10)
-    plt.title = title
-    plt.xlabel = x_label
-    plt.ylabel = y_label
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
     plt.show()
 
 def plot_n_boxplots(data_lists: list[np.ndarray], colors: list):

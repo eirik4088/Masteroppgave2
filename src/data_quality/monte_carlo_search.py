@@ -32,7 +32,6 @@ class MonteCarloSearch:
         self.expected_theta_diff = None
         self.expected_alpha_diff = None
         self.expected_beta_diff = None
-        self.temp_folder = pathlib.Path(r"C:\Users\workbench\eirik_master\Results\mpi_lemon\temp")
 
     def search(self):
         expected_diff_count = np.zeros(len(self.repetition_list))
@@ -92,11 +91,11 @@ class MonteCarloSearch:
 
         for epobj in self.epoch_objects:
             random_list = self._random_generator(
-                repetitions, int(epobj[ec_marker].get_data(copy=False).shape[0])
+                repetitions, int(epobj[ec_marker].get_data(copy=True).shape[0])
             )
             ec_means = self._eeg_power_band(epobj.copy()[ec_marker][random_list])
             random_list = self._random_generator(
-                repetitions, int(epobj[eo_marker].get_data(copy=False).shape[0])
+                repetitions, int(epobj[eo_marker].get_data(copy=True).shape[0])
             )
             eo_means = self._eeg_power_band(epobj.copy()[eo_marker][random_list])
 
@@ -140,78 +139,6 @@ class MonteCarloSearch:
             expected_alpha_diff,
             expected_beta_diff,
         )
-        exit()
-        dp = Process(
-            target=self._repeated_measures_anova,
-            args=(
-                len(self.epoch_objects),
-                ec_accumulated_delta + eo_accumulated_delta,
-                "delta",
-            ),
-        )
-        tp = Process(
-            target=self._repeated_measures_anova,
-            args=(
-                len(self.epoch_objects),
-                ec_accumulated_theta + eo_accumulated_theta,
-                "theta",
-            ),
-        )
-        ap = Process(
-            target=self._repeated_measures_anova,
-            args=(
-                len(self.epoch_objects),
-                ec_accumulated_alpha + eo_accumulated_alpha,
-                "alpha",
-            ),
-        )
-        bp = Process(
-            target=self._repeated_measures_anova,
-            args=(
-                len(self.epoch_objects),
-                ec_accumulated_beta + eo_accumulated_beta,
-                "beta",
-            ),
-        )
-
-        dp.start()
-        tp.start()
-        ap.start()
-        bp.start()
-
-        dp.join()
-        tp.join()
-        ap.join()
-        bp.join()
-
-        delta_sign = pd.read_csv(self.temp_folder / "delta").iloc[0]["Pr > F"]
-        theta_sign = pd.read_csv(self.temp_folder / "theta").iloc[0]["Pr > F"]
-        alpha_sign = pd.read_csv(self.temp_folder / "alpha").iloc[0]["Pr > F"]
-        beta_sign = pd.read_csv(self.temp_folder / "beta").iloc[0]["Pr > F"]
-
-        if delta_sign <= self.significance and np.mean(ec_accumulated_delta) > np.mean(
-            eo_accumulated_delta
-        ):
-            expected_delta_diff = True
-        if theta_sign <= self.significance and np.mean(ec_accumulated_theta) > np.mean(
-            eo_accumulated_theta
-        ):
-            expected_theta_diff = True
-        if alpha_sign <= self.significance and np.mean(ec_accumulated_alpha) > np.mean(
-            eo_accumulated_alpha
-        ):
-            expected_alpha_diff = True
-        if beta_sign <= self.significance and np.mean(ec_accumulated_beta) > np.mean(
-            eo_accumulated_beta
-        ):
-            expected_beta_diff = True
-
-        return (
-            expected_delta_diff,
-            expected_theta_diff,
-            expected_alpha_diff,
-            expected_beta_diff,
-        )
 
     def _random_generator(self, repetitions, max_index):
         random_list = random.sample(range(0, max_index), repetitions)
@@ -230,8 +157,6 @@ class MonteCarloSearch:
         ).fit()
         
         return analysis.anova_table
-        #analysis.anova_table.to_csv(self.temp_folder / identify)
-
 
     # Taken directly from mne toturial and augmented slightly
     def _eeg_power_band(self, epochs):

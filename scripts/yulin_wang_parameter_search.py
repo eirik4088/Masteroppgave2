@@ -42,8 +42,8 @@ def zapline_clean(raw, fline):
 
 def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
-    if processor.bad_channel_index is not None:
-        to_fill[0] = processor.bad_channel_index.size / 61
+    if processor.bad_channels is not None:
+        to_fill[0] = len(processor.bad_channels) / 61
     else:
 
         if baseline is not None:
@@ -117,73 +117,74 @@ def process(my_index):
         cond.resample(sfreq=201, verbose=False)
         epochs = mne.make_fixed_length_epochs(cond, 0.5, verbose=False, preload=True)
 
-    for q, qb in enumerate(quasi):
-        for p, pb in enumerate(peak):
+        for q, qb in enumerate(quasi):
+            for p, pb in enumerate(peak):
+                
 
-            if not qb and not pb:
-                processor = clean_new.CleanNew(
-                    epochs.copy(), dist_specifics={"dummy_key": None}, thresholds=[None]
-                )
-                evaluate(processor, base_line)
-                continue
+                if not qb and not pb:
+                    processor = clean_new.CleanNew(
+                        epochs.copy(), dist_specifics={"dummy_key": None}, thresholds=[None]
+                    )
+                    evaluate(processor, base_line)
+                    continue
 
-            for c, cm in enumerate(central_meassure):
+                for c, cm in enumerate(central_meassure):
 
-                if qb and not pb:
+                    if qb and not pb:
 
-                    for q_sd, q_std in enumerate(q_stds):
-                        processor = clean_new.CleanNew(
-                            epochs.copy(),
-                            thresholds=[q_std],
-                            dist_specifics={
-                                "quasi": {
-                                    "central": cm,
-                                    "spred_corrected": "IQR",
-                                }
-                            },
-                        )
-                        evaluate(processor, quasi_results[c, q_sd, :], base_line)
+                        for q_sd, q_std in enumerate(q_stds):
+                            processor = clean_new.CleanNew(
+                                epochs.copy(),
+                                thresholds=[q_std],
+                                dist_specifics={
+                                    "quasi": {
+                                        "central": cm,
+                                        "spred_corrected": "IQR",
+                                    }
+                                },
+                            )
+                            evaluate(processor, quasi_results[c, q_sd, :], base_line)
 
-                if not qb and pb:
+                    if not qb and pb:
 
-                    for p_sd, p_std in enumerate(p_stds):
+                        for p_sd, p_std in enumerate(p_stds):
 
-                        processor = clean_new.CleanNew(
-                            epochs.copy(),
-                            thresholds=[p_std],
-                            dist_specifics={
-                                "peak": {
-                                    "central": cm,
-                                    "spred_corrected": "IQR",
-                                }
-                            },
-                        )
-                        evaluate(processor, peak_results[c, p_sd, :], base_line)
+                            processor = clean_new.CleanNew(
+                                epochs.copy(),
+                                thresholds=[p_std],
+                                dist_specifics={
+                                    "peak": {
+                                        "central": cm,
+                                        "spred_corrected": "IQR",
+                                    }
+                                },
+                            )
+                            evaluate(processor, peak_results[c, p_sd, :], base_line)
 
-                else:
-                    for q_sd, q_std in enumerate(q_stds):
-                        for c2, cm2 in enumerate(central_meassure):
-                            for p_sd, p_std in enumerate(p_stds):
-                                                            
-                                processor = clean_new.CleanNew(
-                                    epochs.copy(),
-                                    thresholds=[q_std, p_std + 1],
-                                    dist_specifics={
-                                        "quasi": {
-                                            "central": cm,
-                                            "spred_corrected": "IQR",
+                    else:
+                        for q_sd, q_std in enumerate(q_stds):
+                            for c2, cm2 in enumerate(central_meassure):
+                                for p_sd, p_std in enumerate(p_stds):
+                                                                
+                                    processor = clean_new.CleanNew(
+                                        epochs.copy(),
+                                        thresholds=[q_std, p_std],
+                                        dist_specifics={
+                                            "quasi": {
+                                                "central": cm,
+                                                "spred_corrected": "IQR",
+                                            },
+                                            "peak": {
+                                                "central": cm2,
+                                                "spred_corrected": "IQR",
+                                            },
                                         },
-                                        "peak": {
-                                            "central": cm2,
-                                            "spred_corrected": "IQR",
-                                        },
-                                    },
-                                )
-                                evaluate(
-                                    processor,
-                                    combined_results[c, q_sd, c2, p_sd, :],
-                                    base_line,
-                                )
+                                    )
+                                    evaluate(
+                                        processor,
+                                        combined_results[c, q_sd, c2, p_sd, :],
+                                        base_line,
+                                    )
 
         save_folder = pathlib.Path(
             r"C:\Users\workbench\eirik_master\Results\yulin_wang\results_final"
