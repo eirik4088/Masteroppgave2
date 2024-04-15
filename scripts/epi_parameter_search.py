@@ -32,6 +32,7 @@ time_starts = [
 ]
 for pth in data_set.iterdir():
     subjects.append(pth)
+print(data_set)
 
 random_start = [
     [56, 64, 60, 71, 74, 112, 42, 68, 131, 52, 144, 152, 147, 138, 99, 48],
