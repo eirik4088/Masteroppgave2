@@ -19,16 +19,8 @@ for pth in data_set.iterdir():
 base_line_epochs_list = []
 my_heavy_epochs_list = []
 my_heavy_removed = []
-my_robust_epochs_list = []
-my_robust_removed = []
-my_light_epochs_list = []
-my_light_removed = []
 heavy_auto_epochs_list = []
 heavy_auto_removed = []
-light_auto_epochs_list = []
-light_auto_removed = []
-prep_epochs_list = []
-prep_removed = []
 prep_mat_epochs_list = []
 prep_mat_removed = []
 
@@ -143,139 +135,8 @@ for i, sub in enumerate(subjects):
         np.save(results_folder  / "my_heavy" / "accumulate" / "quasi" / "dis" / str(i), base_stats.get_quasi_stability().get_mean_stab())
 
 
-    my_processor = clean_new.CleanNew(
-        epochs["201"].copy(),
-        thresholds=[2.5, 5.5],
-        dist_specifics={
-            "quasi": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-            "peak": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-        },
-    )
-
-    my_processor2 = clean_new.CleanNew(
-        epochs["101"].copy(),
-        thresholds=[2.5, 5.5],
-        dist_specifics={
-            "quasi": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-            "peak": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-        },
-    )
-
-    if (
-        my_processor.bad_channels is not None
-        and my_processor2.bad_channels is not None
-    ):
-        bad_ch2 = np.unique(
-            np.concatenate(
-                [my_processor.bad_channels, my_processor2.bad_channels]
-            )
-        )
-    elif my_processor.bad_channels is not None:
-        bad_ch2 = my_processor.bad_channels
-    elif my_processor2.bad_channels is not None:
-        bad_ch2 = my_processor2.bad_channels
-    else:
-        bad_ch2 = []
-
-    if len(bad_ch2) > 0:
-        my_robust_removed.append(len(bad_ch2))
-        my_robust_epochs_list.append(
-            eval_epochs.copy().drop_channels(bad_ch2)
-        )
-        stats = EpochStats(eval_epochs.copy().drop_channels(bad_ch2))
-        stats.calc_stability()
-        np.save(results_folder / "my_robust" / "accumulate" / "peaks" / "abs_dis" / str(i), stats.get_peak_stability().get_mean_abs_stab())
-        np.save(results_folder / "my_robust" / "accumulate" / "peaks" / "dis" / str(i), stats.get_peak_stability().get_mean_stab())
-        np.save(results_folder / "my_robust" / "accumulate" / "quasi" / "abs_dis" / str(i), stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(results_folder / "my_robust" / "accumulate" / "quasi" / "dis" / str(i), stats.get_quasi_stability().get_mean_stab())
-        np.save(results_folder / "my_robust" / "bad_channels" / str(i), np.array(bad_ch2))
-    else:
-        my_robust_epochs_list.append(eval_epochs.copy())
-        my_robust_removed.append(0)
-        np.save(results_folder  / "my_robust" / "accumulate" / "peaks" / "abs_dis" / str(i), base_stats.get_peak_stability().get_mean_abs_stab())
-        np.save(results_folder  / "my_robust" / "accumulate" / "peaks" / "dis" / str(i), base_stats.get_peak_stability().get_mean_stab())
-        np.save(results_folder  / "my_robust" / "accumulate" / "quasi" / "abs_dis" / str(i), base_stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(results_folder  / "my_robust" / "accumulate" / "quasi" / "dis" / str(i), base_stats.get_quasi_stability().get_mean_stab())
-
-
-    my_processor = clean_new.CleanNew(
-        epochs["201"].copy(),
-        thresholds=[3.5, 5.5],
-        dist_specifics={
-            "quasi": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-            "peak": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-        },
-    )
-    my_processor2 = clean_new.CleanNew(
-        epochs["101"].copy(),
-        thresholds=[3.5, 5.5],
-        dist_specifics={
-            "quasi": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-            "peak": {
-                "central": "median",
-                "spred_corrected": "IQR",
-            },
-        },
-    )
-
-    if (
-        my_processor.bad_channels is not None
-        and my_processor2.bad_channels is not None
-    ):
-        bad_ch3 = np.unique(
-            np.concatenate(
-                [my_processor.bad_channels, my_processor2.bad_channels]
-            )
-        )
-    elif my_processor.bad_channels is not None:
-        bad_ch3 = my_processor.bad_channels
-    elif my_processor2.bad_channels is not None:
-        bad_ch3 = my_processor2.bad_channels
-    else:
-        bad_ch3 = []
-
-    if len(bad_ch3) > 0:
-        my_light_removed.append(len(bad_ch3))
-        my_light_epochs_list.append(
-            eval_epochs.copy().drop_channels(bad_ch3)
-        )
-        stats = EpochStats(eval_epochs.copy().drop_channels(bad_ch3))
-        stats.calc_stability()
-        np.save(results_folder / "my_light" / "accumulate" / "peaks" / "abs_dis" / str(i), stats.get_peak_stability().get_mean_abs_stab())
-        np.save(results_folder / "my_light" / "accumulate" / "peaks" / "dis" / str(i), stats.get_peak_stability().get_mean_stab())
-        np.save(results_folder / "my_light" / "accumulate" / "quasi" / "abs_dis" / str(i), stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(results_folder / "my_light" / "accumulate" / "quasi" / "dis" / str(i), stats.get_quasi_stability().get_mean_stab())
-        np.save(results_folder / "my_light" / "bad_channels" / str(i), np.array(bad_ch3))
-    else:
-        my_light_epochs_list.append(eval_epochs.copy())
-        my_light_removed.append(0)
-        np.save(results_folder  / "my_light" / "accumulate" / "peaks" / "abs_dis" / str(i), base_stats.get_peak_stability().get_mean_abs_stab())
-        np.save(results_folder  / "my_light" / "accumulate" / "peaks" / "dis" / str(i), base_stats.get_peak_stability().get_mean_stab())
-        np.save(results_folder  / "my_light" / "accumulate" / "quasi" / "abs_dis" / str(i), base_stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(results_folder  / "my_light" / "accumulate" / "quasi" / "dis" / str(i), base_stats.get_quasi_stability().get_mean_stab())
-
     epochs_copy = epochs.copy()
+    epochs_copy.set_eeg_reference(verbose=False)
     reject = AutoReject(
         consensus=[1.0], n_interpolate=[0], random_state=97, verbose=False
     )
@@ -285,26 +146,26 @@ for i, sub in enumerate(subjects):
     n_epochs = len(epochs_copy)
     n_bads = log.labels.sum(axis=0)
     # Index of bad channels, drop them and evaluate...
-    bads_index2 = np.where(n_bads > n_epochs * 0.5)[0]
+    bads_index2 = np.where(n_bads > n_epochs * 0.4)[0]
 
     if bads_index2.size > 0:
         bads_name2 = [epochs_copy.ch_names[idx] for idx in bads_index2]
-        light_auto_epochs_list.append(eval_epochs.copy().drop_channels(bads_name2))
-        light_auto_removed.append(bads_index2.size)
+        heavy_auto_epochs_list.append(eval_epochs.copy().drop_channels(bads_name2))
+        heavy_auto_removed.append(bads_index2.size)
         stats = EpochStats(eval_epochs.copy().drop_channels(bads_name2))
         stats.calc_stability()
-        np.save(results_folder / "light_auto" / "accumulate" / "peaks" / "abs_dis" / str(i), stats.get_peak_stability().get_mean_abs_stab())
-        np.save(results_folder / "light_auto" / "accumulate" / "peaks" / "dis" / str(i), stats.get_peak_stability().get_mean_stab())
-        np.save(results_folder / "light_auto" / "accumulate" / "quasi" / "abs_dis" / str(i), stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(results_folder / "light_auto" / "accumulate" / "quasi" / "dis" / str(i), stats.get_quasi_stability().get_mean_stab())
-        np.save(results_folder / "light_auto" / "bad_channels" / str(i), bads_name2)
+        np.save(results_folder / "heavy_auto" / "accumulate" / "peaks" / "abs_dis" / str(i), stats.get_peak_stability().get_mean_abs_stab())
+        np.save(results_folder / "heavy_auto" / "accumulate" / "peaks" / "dis" / str(i), stats.get_peak_stability().get_mean_stab())
+        np.save(results_folder / "heavy_auto" / "accumulate" / "quasi" / "abs_dis" / str(i), stats.get_quasi_stability().get_mean_abs_stab())
+        np.save(results_folder / "heavy_auto" / "accumulate" / "quasi" / "dis" / str(i), stats.get_quasi_stability().get_mean_stab())
+        np.save(results_folder / "heavy_auto" / "bad_channels" / str(i), bads_name2)
     else:
-        light_auto_epochs_list.append(eval_epochs.copy())
-        light_auto_removed.append(0)
-        np.save(results_folder  / "light_auto" / "accumulate" / "peaks" / "abs_dis" / str(i), base_stats.get_peak_stability().get_mean_abs_stab())
-        np.save(results_folder  / "light_auto" / "accumulate" / "peaks" / "dis" / str(i), base_stats.get_peak_stability().get_mean_stab())
-        np.save(results_folder  / "light_auto" / "accumulate" / "quasi" / "abs_dis" / str(i), base_stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(results_folder  / "light_auto" / "accumulate" / "quasi" / "dis" / str(i), base_stats.get_quasi_stability().get_mean_stab())
+        heavy_auto_epochs_list.append(eval_epochs.copy())
+        heavy_auto_removed.append(0)
+        np.save(results_folder  / "heavy_auto" / "accumulate" / "peaks" / "abs_dis" / str(i), base_stats.get_peak_stability().get_mean_abs_stab())
+        np.save(results_folder  / "heavy_auto" / "accumulate" / "peaks" / "dis" / str(i), base_stats.get_peak_stability().get_mean_stab())
+        np.save(results_folder  / "heavy_auto" / "accumulate" / "quasi" / "abs_dis" / str(i), base_stats.get_quasi_stability().get_mean_abs_stab())
+        np.save(results_folder  / "heavy_auto" / "accumulate" / "quasi" / "dis" / str(i), base_stats.get_quasi_stability().get_mean_stab())
 
     montage_kind = "biosemi64"
     montage = mne.channels.make_standard_montage(montage_kind)
@@ -360,37 +221,37 @@ np.save(results_folder / "base_line" / "alpha", base_line.expected_alpha_diff)
 np.save(results_folder / "base_line" / "beta", base_line.expected_beta_diff)
 np.save(results_folder / "base_line" / "combined", base_line.expected_diff_percentage)
 
-my_light = MonteCarloSearch(
-    epochs_list=my_light_epochs_list,
+my_heavy = MonteCarloSearch(
+    epochs_list=my_heavy_epochs_list,
     n_resamples=1000,
     repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
 )
-my_light.search()
-np.save(results_folder / "my_light" / "delta", my_light.expected_delta_diff)
-np.save(results_folder / "my_light" / "theta", my_light.expected_theta_diff)
-np.save(results_folder / "my_light" / "alpha", my_light.expected_alpha_diff)
-np.save(results_folder / "my_light" / "beta", my_light.expected_beta_diff)
-np.save(results_folder / "my_light" / "combined", my_light.expected_diff_percentage)
-np.save(results_folder / "my_light" / "removed", np.array(my_light_removed))
+my_heavy.search()
+np.save(results_folder / "my_heavy" / "delta", my_heavy.expected_delta_diff)
+np.save(results_folder / "my_heavy" / "theta", my_heavy.expected_theta_diff)
+np.save(results_folder / "my_heavy" / "alpha", my_heavy.expected_alpha_diff)
+np.save(results_folder / "my_heavy" / "beta", my_heavy.expected_beta_diff)
+np.save(results_folder / "my_heavy" / "combined", my_heavy.expected_diff_percentage)
+np.save(results_folder / "my_heavy" / "removed", np.array(my_heavy_removed))
 
-light_auto = MonteCarloSearch(
-    epochs_list=light_auto_epochs_list,
+heavy_auto = MonteCarloSearch(
+    epochs_list=heavy_auto_epochs_list,
     n_resamples=1000,
     repetition_list=[1, 5, 9, 14, 19, 24, 29],
     significance_level=0.05,
     ec_marker="201",
     eo_marker="101",
 )
-light_auto.search()
-np.save(results_folder / "light_auto" / "delta", light_auto.expected_delta_diff)
-np.save(results_folder / "light_auto" / "theta", light_auto.expected_theta_diff)
-np.save(results_folder / "light_auto" / "alpha", light_auto.expected_alpha_diff)
-np.save(results_folder / "light_auto" / "beta", light_auto.expected_beta_diff)
-np.save(results_folder / "light_auto" / "combined", light_auto.expected_diff_percentage)
-np.save(results_folder / "light_auto" / "removed", np.array(light_auto_removed))
+heavy_auto.search()
+np.save(results_folder / "heavy_auto" / "delta", heavy_auto.expected_delta_diff)
+np.save(results_folder / "heavy_auto" / "theta", heavy_auto.expected_theta_diff)
+np.save(results_folder / "heavy_auto" / "alpha", heavy_auto.expected_alpha_diff)
+np.save(results_folder / "heavy_auto" / "beta", heavy_auto.expected_beta_diff)
+np.save(results_folder / "heavy_auto" / "combined", heavy_auto.expected_diff_percentage)
+np.save(results_folder / "heavy_auto" / "removed", np.array(heavy_auto_removed))
 
 prep_mat = MonteCarloSearch(
     epochs_list=prep_mat_epochs_list,

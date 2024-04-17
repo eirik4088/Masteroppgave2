@@ -39,7 +39,7 @@ def zapline_clean(raw, fline):
 
 
 def get_event_times(mne_raw):
-    events, events_mapping = mne.events_from_annotations(mne_raw, event_id="auto")
+    events, _ = mne.events_from_annotations(mne_raw, event_id="auto")
     ec = 210
     eo = 200
     start_times = []
@@ -188,38 +188,6 @@ def process(my_index):
 
         my_processor = clean_new.CleanNew(
             epochs.copy(),
-            thresholds=[2.5, 5.5],
-            dist_specifics={
-                "quasi": {
-                    "central": "median",
-                    "spred_corrected": "IQR",
-                },
-                "peak": {
-                    "central": "median",
-                    "spred_corrected": "IQR",
-                },
-            },
-        )
-        evaluate(
-            my_processor,
-            results[1, :],
-            base_line,
-        )
-
-        if len(my_processor.bad_channels) > 0:
-            stats = EpochStats(my_processor.epochs_obj.copy())
-            np.save(save_folder / str(eye) / "bad_channels" / "my_robust"/ str(my_index), my_processor.bad_channels)
-        else:
-            stats = EpochStats(epochs.copy())
-
-        stats.calc_stability()
-        np.save(save_folder / str(eye) / "accumulate" / "my_robust"/ "peaks" / "abs_dis" / str(my_index), stats.get_peak_stability().get_mean_abs_stab())
-        np.save(save_folder / str(eye) / "accumulate" / "my_robust"/ "peaks" / "dis" / str(my_index), stats.get_peak_stability().get_mean_stab())
-        np.save(save_folder / str(eye) / "accumulate" / "my_robust"/ "quasi" / "abs_dis" / str(my_index), stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(save_folder / str(eye) / "accumulate" / "my_robust"/ "quasi" / "dis" / str(my_index), stats.get_quasi_stability().get_mean_stab())
-
-        my_processor = clean_new.CleanNew(
-            epochs.copy(),
             thresholds=[3.5, 5.5],
             dist_specifics={
                 "quasi": {
@@ -319,35 +287,15 @@ def process(my_index):
         np.save(save_folder / str(eye) / "accumulate" / "light_auto"/ "quasi" / "abs_dis" / str(my_index), stats.get_quasi_stability().get_mean_abs_stab())
         np.save(save_folder / str(eye) / "accumulate" / "light_auto"/ "quasi" / "dis" / str(my_index), stats.get_quasi_stability().get_mean_stab())
 
-        # Then implement pyprep
         montage_kind = "biosemi64"
         montage = mne.channels.make_standard_montage(montage_kind)
-        # Extract some info
         sample_rate = raw.info["sfreq"]
-        # Make a copy of the data
         raw_copy = raw.copy()
         prep_params = {
             "ref_chs": "eeg",
             "reref_chs": "eeg",
             "line_freqs": np.arange(50, sample_rate / 2, 50),
         }
-
-        prep = PrepPipeline(raw_copy, prep_params, montage)
-        prep.fit()
-        bads_name_prep = prep.interpolated_channels + prep.still_noisy_channels
-        evaluate_other(epochs.copy().drop_channels(bads_name_prep), bads_name_prep, results[5, :], base_line)
-        
-        if len(bads_name_prep) > 0:
-            stats = EpochStats(epochs.copy().drop_channels(bads_name_prep))
-            np.save(save_folder / str(eye) / "bad_channels" / "prep"/ str(my_index), np.array(bads_name_prep))
-        else:
-            stats = EpochStats(epochs.copy())
-
-        stats.calc_stability()
-        np.save(save_folder / str(eye) / "accumulate" / "prep"/ "peaks" / "abs_dis" / str(my_index), stats.get_peak_stability().get_mean_abs_stab())
-        np.save(save_folder / str(eye) / "accumulate" / "prep"/ "peaks" / "dis" / str(my_index), stats.get_peak_stability().get_mean_stab())
-        np.save(save_folder / str(eye) / "accumulate" / "prep"/ "quasi" / "abs_dis" / str(my_index), stats.get_quasi_stability().get_mean_abs_stab())
-        np.save(save_folder / str(eye) / "accumulate" / "prep"/ "quasi" / "dis" / str(my_index), stats.get_quasi_stability().get_mean_stab())
 
         prep = PrepPipeline(
             raw_copy, prep_params, montage, matlab_strict=True, random_state=435656
