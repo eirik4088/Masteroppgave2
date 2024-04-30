@@ -37,9 +37,8 @@ def zapline_clean(raw, fline):
 
     return cleaned_raw
 
-
 def get_event_times(mne_raw):
-    events, _ = mne.events_from_annotations(mne_raw, event_id="auto")
+    events, _ = mne.events_from_annotations(mne_raw, event_id="auto", verbose=False)
     ec = 210
     eo = 200
     start_times = []
@@ -47,24 +46,24 @@ def get_event_times(mne_raw):
     previous = [np.inf, np.inf, np.inf]
 
     for i in events:
-        if i[2] == ec or i[2] == eo:
-            if i[2] != previous[2]:
-                start_times.append(i[0] / 2500)
-
-        else:
-            if previous[2] == ec or previous[2] == eo:
-                end_times.append(previous[0] / 2500)
+        if i[2] == ec and previous[2] != ec:
+            start_times.append(i[0] / 2500)
+        elif i[2] == eo and previous[2] != eo:
+            start_times.append(i[0] / 2500)
+        if previous[2] == ec and i[2] != ec:
+            end_times.append(previous[0] / 2500)
+        elif previous[2] == eo and i[2] != eo:
+            end_times.append(previous[0] / 2500)
 
         previous = i
-        end_times.append(previous[0] / 2500)
 
     return start_times, end_times
 
 
 def evaluate(processor, to_fill: np.ndarray, baseline=None):
 
-    if processor.bad_channel_index is not None:
-        to_fill[0] = processor.bad_channel_index.size / 61
+    if processor.bad_channels is not None:
+        to_fill[0] = len(processor.bad_channels) / 61
     else:
 
         if baseline is not None:
@@ -119,6 +118,7 @@ def evaluate_other(epochs, bad_channels, to_fill: np.ndarray, baseline=None):
 
 
 def process(my_index):
+
     raw = mne.io.read_raw_brainvision(subjects[my_index], verbose=False)
     raw.drop_channels("VEOG")
     raw.set_montage("standard_1020", verbose=False)
@@ -127,20 +127,20 @@ def process(my_index):
 
     for eye in range(2):
         base_line = np.zeros(5)
-        results = np.zeroes((7, 5))
-
-        current = (
+        results = np.zeros((5, 5))
+        cond = (
             raw.copy()
             .crop(
                 start_times[random_start[eye][my_index]],
                 end_times[random_start[eye][my_index]],
             )
             .load_data()
-        )
-        cond = current.copy().filter(l_freq=1, h_freq=None, verbose=False)
+        ).resample(sfreq=201, verbose=False)
+
+        cond.filter(l_freq=1, h_freq=None, verbose=False)
         cond.filter(l_freq=None, h_freq=100, verbose=False)
         cond = zapline_clean(cond, 50)
-        cond.resample(sfreq=201, verbose=False)
+        #cond.resample(sfreq=201, verbose=False)
         epochs = mne.make_fixed_length_epochs(cond, 0.5, verbose=False, preload=True)
 
         base_processor = clean_new.CleanNew(
@@ -188,10 +188,10 @@ def process(my_index):
 
         my_processor = clean_new.CleanNew(
             epochs.copy(),
-            thresholds=[3.5, 5.5],
+            thresholds=[4.5, 5.5],
             dist_specifics={
                 "quasi": {
-                    "central": "median",
+                    "central": "mean",
                     "spred_corrected": "IQR",
                 },
                 "peak": {
@@ -202,7 +202,7 @@ def process(my_index):
         )
         evaluate(
             my_processor,
-            results[2, :],
+            results[1, :],
             base_line,
         )
 
@@ -231,15 +231,15 @@ def process(my_index):
         n_epochs = len(epochs)
         n_bads = log.labels.sum(axis=0)
         # Index of bad channels, drop them and evaluate...
-        bads_index = np.where(n_bads > n_epochs * 0.4)[0]
+        bads_index = np.where(n_bads > n_epochs * 0.45)[0]
 
         if bads_index.size > 0:
-            bads_name = [epochs_copy.ch_names[idx] for idx in bads_index]
-            epochs_copy.drop_channels(bads_name)
+            bads_name_autorej = [epochs_copy.ch_names[idx] for idx in bads_index]
+            epochs_copy.drop_channels(bads_name_autorej)
         else:
             bads_name_autorej = []
 
-        evaluate_other(epochs_copy, bads_name_autorej, results[3, :], base_line)
+        evaluate_other(epochs_copy, bads_name_autorej, results[2, :], base_line)
 
         if len(bads_name_autorej) > 0:
             stats = EpochStats(epochs_copy.copy())
@@ -268,12 +268,12 @@ def process(my_index):
         bads_index = np.where(n_bads > n_epochs * 0.5)[0]
 
         if bads_index.size > 0:
-            bads_name2 = [epochs_copy.ch_names[idx] for idx in bads_index]
-            epochs_copy.drop_channels(bads_name2)
+            bads_name_autorej2 = [epochs_copy.ch_names[idx] for idx in bads_index]
+            epochs_copy.drop_channels(bads_name_autorej2)
         else:
             bads_name_autorej2 = []
 
-        evaluate_other(epochs_copy, bads_name_autorej2, results[4, :], base_line)
+        evaluate_other(epochs_copy, bads_name_autorej2, results[3, :], base_line)
 
         if len(bads_name_autorej2) > 0:
             stats = EpochStats(epochs_copy.copy())
@@ -287,10 +287,17 @@ def process(my_index):
         np.save(save_folder / str(eye) / "accumulate" / "light_auto"/ "quasi" / "abs_dis" / str(my_index), stats.get_quasi_stability().get_mean_abs_stab())
         np.save(save_folder / str(eye) / "accumulate" / "light_auto"/ "quasi" / "dis" / str(my_index), stats.get_quasi_stability().get_mean_stab())
 
-        montage_kind = "biosemi64"
+        montage_kind = "standard_1020"
         montage = mne.channels.make_standard_montage(montage_kind)
-        sample_rate = raw.info["sfreq"]
-        raw_copy = raw.copy()
+        raw_copy = (
+            raw.copy()
+            .crop(
+                start_times[random_start[eye][my_index]],
+                end_times[random_start[eye][my_index]],
+            )
+            .load_data()
+        ).resample(sfreq=201, verbose=False)
+        sample_rate = raw_copy.info["sfreq"]
         prep_params = {
             "ref_chs": "eeg",
             "reref_chs": "eeg",
@@ -302,7 +309,7 @@ def process(my_index):
         )
         prep.fit()
         bads_name_prep_mat = prep.interpolated_channels + prep.still_noisy_channels
-        evaluate_other(epochs.copy().drop_channels(bads_name_prep_mat), bads_name_prep_mat, results[6, :], base_line)
+        evaluate_other(epochs.copy().drop_channels(bads_name_prep_mat), bads_name_prep_mat, results[4, :], base_line)
 
         if len(bads_name_prep_mat) > 0:
             stats = EpochStats(epochs.copy().drop_channels(bads_name_prep_mat))
@@ -323,7 +330,7 @@ def process(my_index):
 
 # Run experiments
 if __name__ == "__main__":
-    for i in range(0, 211, 16):
+    for i in range(0, 201, 16):
         p0 = Process(target=process, args=(i,))
         p1 = Process(target=process, args=(i + 1,))
         p2 = Process(target=process, args=(i + 2,))

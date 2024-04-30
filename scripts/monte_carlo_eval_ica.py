@@ -29,7 +29,7 @@ def remove_artifacts(epoch_obj):
 
     for ic in range(ica.n_components):
         if ica_labels["y_pred_proba"][ic] > 0.9:
-            if ica_labels["labels"][ic] not in ["brain", "other"]:
+            if ica_labels["labels"][ic] in ["eye blink", "muscle artifact"]:
                 exclude_idx.append(ic)
     
     reconstructed = epoch_obj.copy()
@@ -88,7 +88,7 @@ for i, sub in enumerate(subjects):
     spes_case.drop_channels("Status")
     eval_epochs = mne.Epochs(
         raw=spes_case,
-        events=events,
+        events=spes_events,
         event_id=[101, 201],
         tmin=0,
         tmax=2,
@@ -123,10 +123,10 @@ for i, sub in enumerate(subjects):
 
     my_processor = clean_new.CleanNew(
         epochs["201"].copy(),
-        thresholds=[3.5, 5.5],
+        thresholds=[4.5, 5.5],
         dist_specifics={
             "quasi": {
-                "central": "median",
+                "central": "mean",
                 "spred_corrected": "IQR",
             },
             "peak": {

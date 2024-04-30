@@ -44,7 +44,7 @@ class MonteCarloSearch:
         for _ in range(self.n_resamples):
             for r, rep in enumerate(self.repetition_list):
                 delta, theta, alpha, beta = self._generate_data(
-                    rep, self.epochs_ec, self.epocs_eo
+                    rep
                 )
                 if delta and theta and alpha and beta:
                     expected_diff_count[r] += 1
@@ -74,7 +74,7 @@ class MonteCarloSearch:
 
         return expected_diff_percentage
 
-    def _generate_data(self, repetitions: int, ec_marker, eo_marker):
+    def _generate_data(self, repetitions: int):
         ec_accumulated_delta = []
         ec_accumulated_theta = []
         ec_accumulated_alpha = []

@@ -11,6 +11,7 @@ data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\srm_data")
 
 subjects = []
 for pth in data_set.iterdir():
+    print(pth)
     subjects.append(pth)
 
 random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 44]
@@ -63,6 +64,7 @@ def evaluate(epochs, bad_channels, to_fill: np.ndarray, baseline=None):
 
 def process(my_index):
     base_line = np.zeros(5)
+    exit()
     results = np.zeros(
         (
             len(thresholds),
@@ -122,52 +124,9 @@ def process(my_index):
 # Run experiments
 if __name__ == "__main__":
     p0 = Process(target=process, args=(0,))
-    p1 = Process(target=process, args=(1,))
-    p2 = Process(target=process, args=(2,))
-    p3 = Process(target=process, args=(3,))
-    p4 = Process(target=process, args=(4,))
-    p5 = Process(target=process, args=(5,))
-    p6 = Process(target=process, args=(6,))
-    p7 = Process(target=process, args=(7,))
-    p8 = Process(target=process, args=(8,))
-    p9 = Process(target=process, args=(9,))
-    p10 = Process(target=process, args=(10,))
-    p11 = Process(target=process, args=(11,))
-    p12 = Process(target=process, args=(12,))
-    p13 = Process(target=process, args=(13,))
-    p14 = Process(target=process, args=(14,))
-    p15 = Process(target=process, args=(15,))
+
 
     p0.start()
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    p5.start()
-    p6.start()
-    p7.start()
-    p8.start()
-    p9.start()
-    p10.start()
-    p11.start()
-    p12.start()
-    p13.start()
-    p14.start()
-    p15.start()
+
 
     p0.join()
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    p5.join()
-    p6.join()
-    p7.join()
-    p8.join()
-    p9.join()
-    p10.join()
-    p11.join()
-    p12.join()
-    p13.join()
-    p14.join()
-    p15.join()

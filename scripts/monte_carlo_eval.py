@@ -146,7 +146,7 @@ for i, sub in enumerate(subjects):
     n_epochs = len(epochs_copy)
     n_bads = log.labels.sum(axis=0)
     # Index of bad channels, drop them and evaluate...
-    bads_index2 = np.where(n_bads > n_epochs * 0.4)[0]
+    bads_index2 = np.where(n_bads > n_epochs * 0.45)[0]
 
     if bads_index2.size > 0:
         bads_name2 = [epochs_copy.ch_names[idx] for idx in bads_index2]

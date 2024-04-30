@@ -24,7 +24,7 @@ def plot_dist_hist(
         values,
         kde=True,
         color=color,
-        bins=9,
+        bins=np.unique(values).size,
         stat="density",
         kde_kws={"cut": 3},
         alpha=0.4,
@@ -32,7 +32,7 @@ def plot_dist_hist(
     )
     max_y = t.dataLim.get_points()[-1][-1] * 0.975
     min_x = t.dataLim.get_points()[0][0] * 1.2
-    ax.set_ylim([0.0, max_y * 1.01])
+    ax.set_ylim([0.0, max_y * 1.1])
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel("Frequency")
@@ -75,8 +75,8 @@ def plot_dist_hist(
     if skew:
         ax.text(
             min_x,
-            max_y * 0.97 * 0.97 * 0.97 * 0.97,
-            f"Kurtosis: {round(scipy.skew.kurtosis(values), 1)}",
+            max_y * 0.97 * 0.97 * 0.97 * 0.97 * 0.97,
+            f"Kurtosis: {round(scipy.stats.skew(values), 1)}",
             fontsize=6,
         )
 
