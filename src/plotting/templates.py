@@ -17,6 +17,8 @@ def plot_dist_hist(
     mad=True,
     kurtosis=True,
     skew=True,
+    higher=1,
+    lefter=1,
 ):
     _, ax = plt.subplots()
     sns.set_color_codes(color_codes)
@@ -30,8 +32,8 @@ def plot_dist_hist(
         alpha=0.4,
         edgecolor=(1, 1, 1, 0.4),
     )
-    max_y = t.dataLim.get_points()[-1][-1] * 0.975
-    min_x = t.dataLim.get_points()[0][0] * 1.2
+    max_y = t.dataLim.get_points()[-1][-1] * 0.975 * higher
+    min_x = t.dataLim.get_points()[0][0] * 1.2 * righter
     ax.set_ylim([0.0, max_y * 1.1])
     ax.set_title(title)
     ax.set_xlabel(x_label)
@@ -76,7 +78,7 @@ def plot_dist_hist(
         ax.text(
             min_x,
             max_y * 0.97 * 0.97 * 0.97 * 0.97 * 0.97,
-            f"Kurtosis: {round(scipy.stats.skew(values), 1)}",
+            f"Skew: {round(scipy.stats.skew(values), 1)}",
             fontsize=6,
         )
 
