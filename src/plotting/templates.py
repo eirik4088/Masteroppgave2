@@ -41,7 +41,7 @@ def plot_dist_hist(
     ax.set_ylim([0.0, max_y * 1.1])
     ax.set_title(title)
     ax.set_xlabel(x_label)
-    ax.set_ylabel("Frequency")
+    ax.set_ylabel(None)
 
     if mean:
         ax.text(
