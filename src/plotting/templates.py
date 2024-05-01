@@ -20,7 +20,10 @@ def plot_dist_hist(
     higher=1,
     lefter=1,
 ):
-    sns.set_theme(font_scale=1.5)
+    style = sns.axes_style()
+    style['axes.spines.top'] = False
+    style['axes.spines.right'] = False
+    sns.set_theme(font_scale=1.3, style=style)
     _, ax = plt.subplots()
     sns.set_color_codes(color_codes)
     t = sns.histplot(
