@@ -7,8 +7,8 @@ from scipy.stats import gaussian_kde
 
 def plot_dist_hist(
     values: np.array,
-    title: str,
-    x_label: str,
+    title= None,
+    x_label= None,
     color_codes="muted",
     color="b",
     mean=True,
@@ -20,6 +20,7 @@ def plot_dist_hist(
     higher=1,
     lefter=1,
 ):
+    sns.set_theme(font_scale=1.5)
     _, ax = plt.subplots()
     sns.set_color_codes(color_codes)
     t = sns.histplot(
@@ -33,7 +34,7 @@ def plot_dist_hist(
         edgecolor=(1, 1, 1, 0.4),
     )
     max_y = t.dataLim.get_points()[-1][-1] * 0.975 * higher
-    min_x = t.dataLim.get_points()[0][0] * 1.2 * righter
+    min_x = t.dataLim.get_points()[0][0] * 1.2 * lefter
     ax.set_ylim([0.0, max_y * 1.1])
     ax.set_title(title)
     ax.set_xlabel(x_label)
@@ -44,42 +45,42 @@ def plot_dist_hist(
             min_x,
             max_y,
             f"Mean: {round(np.mean(values), 1)}",
-            fontsize=6,
+            fontsize=12,
         )
     if sd:
         ax.text(
             min_x,
-            max_y * 0.97,
+            max_y - (max_y * 0.06),
             f"SD: {round(np.std(values), 1)}",
-            fontsize=6,
+            fontsize=12,
         )
     if median:
         ax.text(
             min_x,
-            max_y * 0.97 * 0.97,
+            max_y - (max_y * 0.06)*2,
             f"Median: {round(np.median(values), 1)}",
-            fontsize=6,
+            fontsize=12,
         )
     if mad:
         ax.text(
             min_x,
-            max_y * 0.97 * 0.97 * 0.97,
+            max_y - (max_y * 0.06)*3,
             f"MAD: {round(scipy.stats.median_abs_deviation(values), 1)}",
-            fontsize=6,
+            fontsize=12,
         )
     if kurtosis:
         ax.text(
             min_x,
-            max_y * 0.97 * 0.97 * 0.97 * 0.97,
+            max_y - (max_y * 0.06)*4,
             f"Kurtosis: {round(scipy.stats.kurtosis(values), 1)}",
-            fontsize=6,
+            fontsize=12,
         )
     if skew:
         ax.text(
             min_x,
-            max_y * 0.97 * 0.97 * 0.97 * 0.97 * 0.97,
+            max_y - (max_y * 0.06)*5,
             f"Skew: {round(scipy.stats.skew(values), 1)}",
-            fontsize=6,
+            fontsize=12,
         )
 
 
