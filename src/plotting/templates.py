@@ -23,6 +23,7 @@ def plot_dist_hist(
     style = sns.axes_style()
     style['axes.spines.top'] = False
     style['axes.spines.right'] = False
+    style['font'] = "New Times Roman"
     sns.set_theme(font_scale=1.3, style=style)
     _, ax = plt.subplots()
     sns.set_color_codes(color_codes)
@@ -48,42 +49,48 @@ def plot_dist_hist(
             min_x,
             max_y,
             f"Mean: {round(np.mean(values), 1)}",
-            fontsize=12,
+            fontsize=14,
+            font="Times New Roman",
         )
     if sd:
         ax.text(
             min_x,
             max_y - (max_y * 0.06),
             f"SD: {round(np.std(values), 1)}",
-            fontsize=12,
+            fontsize=14,
+            font="Times New Roman",
         )
     if median:
         ax.text(
             min_x,
             max_y - (max_y * 0.06)*2,
             f"Median: {round(np.median(values), 1)}",
-            fontsize=12,
+            fontsize=14,
+            font="Times New Roman",
         )
     if mad:
         ax.text(
             min_x,
             max_y - (max_y * 0.06)*3,
             f"MAD: {round(scipy.stats.median_abs_deviation(values), 1)}",
-            fontsize=12,
+            fontsize=14,
+            font="Times New Roman",
         )
     if kurtosis:
         ax.text(
             min_x,
             max_y - (max_y * 0.06)*4,
             f"Kurtosis: {round(scipy.stats.kurtosis(values), 1)}",
-            fontsize=12,
+            fontsize=14,
+            font="Times New Roman",
         )
     if skew:
         ax.text(
             min_x,
             max_y - (max_y * 0.06)*5,
             f"Skew: {round(scipy.stats.skew(values), 1)}",
-            fontsize=12,
+            fontsize=14,
+            font="Times New Roman",
         )
 
 
