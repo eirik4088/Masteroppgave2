@@ -22,7 +22,7 @@ random_start = [
 quasi = [False, True]
 peak = [False, True]
 central_meassure = ["mean", "median"]
-q_stds = [2.5, 3.5, 4.5]
+q_stds = [2, 2.5, 3.5, 4.5]
 p_stds = [3, 3.5, 4.5, 5.5]
 
 

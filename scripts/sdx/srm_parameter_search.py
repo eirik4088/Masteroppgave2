@@ -17,7 +17,8 @@ random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 
 quasi = [False, True]
 peak = [False, True]
 central_meassure = ["mean", "median"]
-stds = [3, 4, 5]
+q_stds = [2, 2.5, 3.5, 4.5]
+p_stds = [3, 3.5, 4.5, 5.5]
 
 
 def zapline_clean(raw, fline):
@@ -33,67 +34,59 @@ def zapline_clean(raw, fline):
 
     return cleaned_raw
 
-def evaluate(processor, to_fill:np.ndarray, baseline=None):
 
-    if processor.bad_channel_index is not None:
-        to_fill[0] = processor.bad_channel_index.size / 64
+def evaluate(processor, to_fill: np.ndarray, baseline=None):
+
+    if processor.bad_channels is not None:
+        to_fill[0] = len(processor.bad_channels) / 64
     else:
 
         if baseline is not None:
             return
-        
+
         to_fill[0] = 0
 
-    if to_fill[0] < 1:
+    if to_fill[0] < 0.74:
         for_ica = processor.epochs_obj.copy()
         for_ica.set_eeg_reference(verbose=False)
 
         evaluater = ica_score.IcaScore(for_ica)
-        to_fill[1] = (
-            evaluater.get_n_components()[0]
-        )
-        to_fill[2] = (
-            evaluater.get_n_components()[0]
-            + evaluater.get_n_components()[1]
-        )
-        to_fill[3] = (
-            evaluater.get_explained_var()["eeg"]
-        )
-        to_fill[4] = (
-            evaluater.get_explained_var(bio_components=True)[
-                "eeg"
-            ]
-        )
+        to_fill[1] = evaluater.get_n_components()[0]
+        to_fill[2] = evaluater.get_n_components()[0] + evaluater.get_n_components()[1]
+        to_fill[3] = evaluater.get_explained_var()["eeg"]
+        to_fill[4] = evaluater.get_explained_var(bio_components=True)["eeg"]
         if baseline is not None:
             to_fill[1] = to_fill[1] - baseline[1]
             to_fill[2] = to_fill[2] - baseline[2]
             to_fill[3] = to_fill[3] - baseline[3]
             to_fill[4] = to_fill[4] - baseline[4]
     else:
-        to_fill[1:] = float('nan')
+        to_fill[1:] = float("nan")
+        print("NaN!!!")
+
 
 def process(my_index):
     base_line = np.zeros(5)
     quasi_results = np.zeros(
         (
             len(central_meassure),
-            len(stds),
+            len(q_stds),
             5,
         )
     )
     peak_results = np.zeros(
         (
             len(central_meassure),
-            len(stds),
+            len(p_stds),
             5,
         )
     )
     combined_results = np.zeros(
         (
             len(central_meassure),
-            len(stds),
+            len(q_stds),
             len(central_meassure),
-            len(stds),
+            len(p_stds),
             5,
         )
     )
@@ -112,70 +105,82 @@ def process(my_index):
     eeg.resample(sfreq=201, verbose=False)
     epochs = mne.make_fixed_length_epochs(eeg, 0.5, verbose=False, preload=True)
 
-
-
     for q, qb in enumerate(quasi):
         for p, pb in enumerate(peak):
 
             if not qb and not pb:
-                processor = clean_new.CleanNew(epochs.copy(), dist_specifics={"dummy_key": None}, thresholds=[None])
+                processor = clean_new.CleanNew(
+                    epochs.copy(), dist_specifics={"dummy_key": None}, thresholds=[None]
+                )
                 evaluate(processor, base_line)
                 continue
 
             for c, cm in enumerate(central_meassure):
-                for sd, std in enumerate(stds):
 
-                    if qb and not pb:
+                if qb and not pb:
+
+                    for q_sd, q_std in enumerate(q_stds):
                         processor = clean_new.CleanNew(
                             epochs.copy(),
-                            thresholds=[std],
+                            thresholds=[q_std],
                             dist_specifics={
                                 "quasi": {
                                     "central": cm,
-                                    "spred_corrected": None,
+                                    "spred_corrected": "IQR",
                                 }
                             },
                         )
-                        evaluate(processor, quasi_results[c, sd, :], base_line)
-                    
-                    elif not qb and pb:
+                        evaluate(processor, quasi_results[c, q_sd, :], base_line)
+
+                if not qb and pb:
+
+                    for p_sd, p_std in enumerate(p_stds):
+
                         processor = clean_new.CleanNew(
                             epochs.copy(),
-                            thresholds=[std+1],
+                            thresholds=[p_std],
                             dist_specifics={
                                 "peak": {
                                     "central": cm,
-                                    "spred_corrected": None,
+                                    "spred_corrected": "IQR",
                                 }
                             },
                         )
-                        evaluate(processor, peak_results[c, sd, :], base_line)
+                        evaluate(processor, peak_results[c, p_sd, :], base_line)
 
-                    else:
+                else:
+                    for q_sd, q_std in enumerate(q_stds):
                         for c2, cm2 in enumerate(central_meassure):
-                            for sd2, std2 in enumerate(stds):
-
+                            for p_sd, p_std in enumerate(p_stds):
+                                                            
                                 processor = clean_new.CleanNew(
                                     epochs.copy(),
-                                    thresholds=[std, std2+1],
+                                    thresholds=[q_std, p_std],
                                     dist_specifics={
                                         "quasi": {
                                             "central": cm,
-                                            "spred_corrected": None,
+                                            "spred_corrected": "IQR",
                                         },
                                         "peak": {
                                             "central": cm2,
-                                            "spred_corrected": None,
+                                            "spred_corrected": "IQR",
                                         },
                                     },
                                 )
-                                evaluate(processor, combined_results[c, sd, c2, sd2, :], base_line)
+                                evaluate(
+                                    processor,
+                                    combined_results[c, q_sd, c2, p_sd, :],
+                                    base_line,
+                                )
 
-    save_folder =  pathlib.Path(r"C:\Users\workbench\eirik_master\Results\srm_data\results_run_1")
+    save_folder = pathlib.Path(
+        r"C:\Users\workbench\eirik_master\Results\srm_data\results_final"
+    )
     np.save(save_folder / "base_line" / f"{my_index}", base_line)
     np.save(save_folder / "quasi" / f"{my_index}", quasi_results)
     np.save(save_folder / "peak" / f"{my_index}", peak_results)
     np.save(save_folder / "combined" / f"{my_index}", combined_results)
+
 
 # Run experiments
 if __name__ == "__main__":

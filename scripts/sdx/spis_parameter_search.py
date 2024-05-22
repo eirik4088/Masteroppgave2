@@ -5,19 +5,22 @@ import numpy as np
 from meegkit import dss
 from eeg_clean import clean_new
 from data_quality import ica_score
+import pymatreader
 
-data_set = pathlib.Path(r"C:\Users\workbench\eirik_master\Data\srm_data")
+data_set = pathlib.Path(
+    r"C:\Users\workbench\eirik_master\Data\SPIS-Resting-State-Dataset\Pre-SART EEG"
+)
 
 subjects = []
 for pth in data_set.iterdir():
     subjects.append(pth)
 
-random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 44]
+random_start = [22, 35, 65, 46, 69, 61, 57, 22, 15, 72, 69, 48, 63, 56, 37, 60]
 
 quasi = [False, True]
 peak = [False, True]
 central_meassure = ["mean", "median"]
-q_stds = [2.5, 3.5, 4.5]
+q_stds = [2, 2.5, 3.5, 4.5]
 p_stds = [3, 3.5, 4.5, 5.5]
 
 
@@ -62,7 +65,6 @@ def evaluate(processor, to_fill: np.ndarray, baseline=None):
             to_fill[4] = to_fill[4] - baseline[4]
     else:
         to_fill[1:] = float("nan")
-        print("NaN!!!")
 
 
 def process(my_index):
@@ -91,7 +93,81 @@ def process(my_index):
         )
     )
 
-    raw = mne.io.read_raw_edf(subjects[my_index], verbose=False)
+    dict = pymatreader.read_mat(subjects[my_index])
+
+    info = mne.create_info(
+        sfreq=256,
+        ch_types="eeg",
+        ch_names=[
+            "Fp1",
+            "AF7",
+            "AF3",
+            "F1",
+            "F3",
+            "F5",
+            "F7",
+            "FT7",
+            "FC5",
+            "FC3",
+            "FC1",
+            "C1",
+            "C3",
+            "C5",
+            "T7",
+            "TP7",
+            "CP5",
+            "CP3",
+            "CP1",
+            "P1",
+            "P3",
+            "P5",
+            "P7",
+            "P9",
+            "PO7",
+            "PO3",
+            "O1",
+            "Iz",
+            "Oz",
+            "POz",
+            "Pz",
+            "CPz",
+            "Fpz",
+            "Fp2",
+            "AF8",
+            "AF4",
+            "AFz",
+            "Fz",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+            "FT8",
+            "FC6",
+            "FC4",
+            "FC2",
+            "FCz",
+            "Cz",
+            "C2",
+            "C4",
+            "C6",
+            "T8",
+            "TP8",
+            "CP6",
+            "CP4",
+            "CP2",
+            "P2",
+            "P4",
+            "P6",
+            "P8",
+            "P10",
+            "PO8",
+            "PO4",
+            "O2",
+        ],
+    )
+
+    raw = mne.io.RawArray(dict["dataRest"][:64, :], info)
+
     raw.set_montage("biosemi64", verbose=False)
 
     eeg = (
@@ -174,7 +250,7 @@ def process(my_index):
                                 )
 
     save_folder = pathlib.Path(
-        r"C:\Users\workbench\eirik_master\Results\srm_data\results_final"
+        r"C:\Users\workbench\eirik_master\Results\SPIS-Resting-State-Dataset\results_final"
     )
     np.save(save_folder / "base_line" / f"{my_index}", base_line)
     np.save(save_folder / "quasi" / f"{my_index}", quasi_results)
