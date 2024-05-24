@@ -39,7 +39,7 @@ for i, sub in enumerate(subjects):
     )
     events = mne.find_events(raw_down_sampled[0], stim_channel="Status", verbose=False)
     raw_down_sampled[0].drop_channels("Status")
-    baseline = (0, 0)  # means from the first instant to t = 0
+    baseline = (0, 0)
     epochs = mne.Epochs(
         raw=raw_down_sampled[0],
         events=events,
@@ -141,11 +141,9 @@ for i, sub in enumerate(subjects):
         consensus=[1.0], n_interpolate=[0], random_state=97, verbose=False
     )
     reject.fit(epochs_copy)
-    # find where channels are considered bad, and extract the ones that are bad longer then threshold percentage
     log = reject.get_reject_log(epochs_copy)
     n_epochs = len(epochs_copy)
     n_bads = log.labels.sum(axis=0)
-    # Index of bad channels, drop them and evaluate...
     bads_index2 = np.where(n_bads > n_epochs * 0.45)[0]
 
     if bads_index2.size > 0:
@@ -169,9 +167,7 @@ for i, sub in enumerate(subjects):
 
     montage_kind = "biosemi64"
     montage = mne.channels.make_standard_montage(montage_kind)
-    # Extract some info
     sample_rate = raw.info["sfreq"]
-    # Make a copy of the data
     raw_copy = raw.copy()
     prep_params = {
         "ref_chs": "eeg",

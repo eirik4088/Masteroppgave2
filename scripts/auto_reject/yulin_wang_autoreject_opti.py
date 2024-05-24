@@ -22,17 +22,16 @@ random_start = [
 thresholds = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
 av_ref = [False, True]
 
-
+#taken from https://mne.discourse.group/t/clean-line-noise-zapline-method-function-for-mne-using-meegkit-toolbox/7407
 def zapline_clean(raw, fline):
-    data = raw.get_data(verbose=False).T  # Convert mne data to numpy darray
-    sfreq = raw.info["sfreq"]  # Extract the sampling freq
-    # Apply MEEGkit toolbox function
+    data = raw.get_data(verbose=False).T
+    sfreq = raw.info["sfreq"]
     out, _ = dss.dss_line(
         data, fline, sfreq, nkeep=1, show=False
-    )  # fline (Line noise freq) = 50 Hz for Europe
+    )
     cleaned_raw = mne.io.RawArray(
         out.T, raw.info, verbose=False
-    )  # Convert output to mne RawArray again
+    )
 
     return cleaned_raw
 
@@ -103,16 +102,13 @@ def process(my_index):
                 if af:
                     epochs_copy.set_eeg_reference(verbose=False)
 
-                # Create autoreject object and fit it with the data
                 reject = AutoReject(
                     consensus=[1.0], n_interpolate=[0], random_state=97, verbose=False
                 )
                 reject.fit(epochs_copy)
-                # find where channels are considered bad, and extract the ones that are bad longer then threshold percentage
                 log = reject.get_reject_log(epochs_copy)
                 n_epochs = len(epochs)
                 n_bads = log.labels.sum(axis=0)
-                # Index of bad channels, drop them and evaluate...
                 bads_index = np.where(n_bads > n_epochs * thrs)[0]
 
                 if bads_index.size > 0:

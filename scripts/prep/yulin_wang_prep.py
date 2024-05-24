@@ -20,16 +20,16 @@ random_start = [
     [66, 112, 52, 193, 31, 97, 146, 91, 52, 138, 188, 83, 129, 177, 103, 95],
 ]
 
+#taken from https://mne.discourse.group/t/clean-line-noise-zapline-method-function-for-mne-using-meegkit-toolbox/7407
 def zapline_clean(raw, fline):
-    data = raw.get_data(verbose=False).T  # Convert mne data to numpy darray
-    sfreq = raw.info["sfreq"]  # Extract the sampling freq
-    # Apply MEEGkit toolbox function
+    data = raw.get_data(verbose=False).T
+    sfreq = raw.info["sfreq"]
     out, _ = dss.dss_line(
         data, fline, sfreq, nkeep=1, show=False
-    )  # fline (Line noise freq) = 50 Hz for Europe
+    )
     cleaned_raw = mne.io.RawArray(
         out.T, raw.info, verbose=False
-    )  # Convert output to mne RawArray again
+    )
 
     return cleaned_raw
 

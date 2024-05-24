@@ -20,17 +20,16 @@ central_meassure = ["mean", "median"]
 q_stds = [2, 2.5, 3.5, 4.5]
 p_stds = [3, 3.5, 4.5, 5.5]
 
-
+#taken from https://mne.discourse.group/t/clean-line-noise-zapline-method-function-for-mne-using-meegkit-toolbox/7407
 def zapline_clean(raw, fline):
-    data = raw.get_data(verbose=False).T  # Convert mne data to numpy darray
-    sfreq = raw.info["sfreq"]  # Extract the sampling freq
-    # Apply MEEGkit toolbox function
+    data = raw.get_data(verbose=False).T
+    sfreq = raw.info["sfreq"]
     out, _ = dss.dss_line(
         data, fline, sfreq, nkeep=1, show=False
-    )  # fline (Line noise freq) = 50 Hz for Europe
+    )
     cleaned_raw = mne.io.RawArray(
         out.T, raw.info, verbose=False
-    )  # Convert output to mne RawArray again
+    )
 
     return cleaned_raw
 

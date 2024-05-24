@@ -19,17 +19,16 @@ random_start = [148, 49, 49, 87, 68, 87, 38, 72, 148, 34, 25, 72, 150, 116, 52, 
 thresholds = [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]
 av_ref = [False, True]
 
-
+#taken from https://mne.discourse.group/t/clean-line-noise-zapline-method-function-for-mne-using-meegkit-toolbox/7407
 def zapline_clean(raw, fline):
-    data = raw.get_data(verbose=False).T  # Convert mne data to numpy darray
-    sfreq = raw.info["sfreq"]  # Extract the sampling freq
-    # Apply MEEGkit toolbox function
+    data = raw.get_data(verbose=False).T
+    sfreq = raw.info["sfreq"]
     out, _ = dss.dss_line(
         data, fline, sfreq, nkeep=1, show=False
-    )  # fline (Line noise freq) = 50 Hz for Europe
+    )
     cleaned_raw = mne.io.RawArray(
         out.T, raw.info, verbose=False
-    )  # Convert output to mne RawArray again
+    )
 
     return cleaned_raw
 
@@ -64,7 +63,6 @@ def evaluate(epochs, bad_channels, to_fill: np.ndarray, baseline=None):
 
 def process(my_index):
     base_line = np.zeros(5)
-    exit()
     results = np.zeros(
         (
             len(thresholds),
@@ -95,16 +93,13 @@ def process(my_index):
             if af:
                 epochs_copy.set_eeg_reference()
 
-            # Create autoreject object and fit it with the data
             reject = AutoReject(
                 consensus=[1.0], n_interpolate=[0], random_state=97, verbose=False
             )
             reject.fit(epochs_copy)
-            # find where channels are considered bad, and extract the ones that are bad longer then threshold percentage
             log = reject.get_reject_log(epochs_copy)
             n_epochs = len(epochs)
             n_bads = log.labels.sum(axis=0)
-            # Index of bad channels, drop them and evaluate...
             bads_index = np.where(n_bads > n_epochs * thrs)[0]
 
             if bads_index.size > 0:
@@ -124,9 +119,52 @@ def process(my_index):
 # Run experiments
 if __name__ == "__main__":
     p0 = Process(target=process, args=(0,))
-
+    p1 = Process(target=process, args=(2,))
+    p2 = Process(target=process, args=(4,))
+    p3 = Process(target=process, args=(6,))
+    p4 = Process(target=process, args=(8,))
+    p5 = Process(target=process, args=(10,))
+    p6 = Process(target=process, args=(12,))
+    p7 = Process(target=process, args=(14,))
+    p8 = Process(target=process, args=(16,))
+    p9 = Process(target=process, args=(18,))
+    p10 = Process(target=process, args=(20,))
+    p11 = Process(target=process, args=(22,))
+    p12 = Process(target=process, args=(24,))
+    p13 = Process(target=process, args=(26,))
+    p14 = Process(target=process, args=(28,))
+    p15 = Process(target=process, args=(30,))
 
     p0.start()
-
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    p5.start()
+    p6.start()
+    p7.start()
+    p8.start()
+    p9.start()
+    p10.start()
+    p11.start()
+    p12.start()
+    p13.start()
+    p14.start()
+    p15.start()
 
     p0.join()
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
+    p5.join()
+    p6.join()
+    p7.join()
+    p8.join()
+    p9.join()
+    p10.join()
+    p11.join()
+    p12.join()
+    p13.join()
+    p14.join()
+    p15.join()
