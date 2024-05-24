@@ -1,3 +1,4 @@
+# TODO: Annotate code
 import numpy as np
 import mne
 import sklearn
